@@ -1,0 +1,23 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Vite 8 needs >= 22.12. Pinned so a Netlify default bump cannot break the build.
+  NODE_VERSION = "22"
+  # Playwright is a devDependency used only for local screenshots. Netlify
+  # installs devDependencies (vite is one), and the playwright package would
+  # otherwise download ~150MB of browsers on every build.
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"
+
+# Vite fingerprints filenames, so built assets are safe to cache forever.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Single-page app: every path serves the app rather than a 404.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

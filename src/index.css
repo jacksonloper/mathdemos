@@ -1,0 +1,268 @@
+/* Palette roles. Single-series chart, so one categorical slot (blue) plus ink.
+   Light values first; dark mode redefines only the roles that change. */
+:root {
+  --surface-0: #f7f7f5;
+  --surface-1: #fcfcfb;
+  --line:      #e2e1dd;
+  --line-soft: #ecebe7;
+  --text-1:    #0b0b0b;
+  --text-2:    #52514e;
+  --text-3:    #86847e;
+  --series-1:  #2a78d6;
+  --series-1-soft: #cde2fb;
+  --focus:     #2a78d6;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface-0: #121211;
+    --surface-1: #1a1a19;
+    --line:      #34342f;
+    --line-soft: #2a2a26;
+    --text-1:    #ffffff;
+    --text-2:    #c3c2b7;
+    --text-3:    #8d8b81;
+    --series-1:  #3987e5;
+    --series-1-soft: #184f95;
+    --focus:     #3987e5;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--surface-0);
+  color: var(--text-1);
+  font: 15px/1.55 "Iowan Old Style", Palatino, Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input { font: inherit; }
+
+.app { display: flex; min-height: 100vh; }
+
+/* ---- sidebar ---- */
+
+.sidebar {
+  flex: 0 0 220px;
+  border-right: 1px solid var(--line);
+  padding: 26px 0;
+  background: var(--surface-0);
+}
+
+.brand { padding: 0 22px 20px; }
+.brand-course {
+  display: block;
+  font: 600 11px/1 "Helvetica Neue", Helvetica, sans-serif;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.brand-sub {
+  display: block;
+  margin-top: 5px;
+  font-size: 17px;
+  color: var(--text-1);
+}
+
+.sidebar ul { list-style: none; margin: 0; padding: 0; }
+
+.sidebar button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 22px;
+  border: 0;
+  border-left: 2px solid transparent;
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.sidebar button:hover { color: var(--text-1); }
+.sidebar button.is-active {
+  border-left-color: var(--series-1);
+  color: var(--text-1);
+}
+.nav-title { display: block; }
+.nav-module {
+  display: block;
+  font: 10px/1.4 "Helvetica Neue", Helvetica, sans-serif;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* ---- content ---- */
+
+.content { flex: 1; min-width: 0; padding: 42px 46px 80px; }
+.case { max-width: 780px; }
+
+.case-head h1 {
+  margin: 0 0 8px;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.case-head p { margin: 0; max-width: 58ch; color: var(--text-2); }
+
+/* ---- controls ---- */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px 32px;
+  align-items: flex-end;
+  margin: 28px 0 18px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.control-label {
+  display: block;
+  margin-bottom: 7px;
+  font: 600 10px/1 "Helvetica Neue", Helvetica, sans-serif;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.segmented { display: flex; }
+.segmented button {
+  padding: 6px 13px;
+  border: 1px solid var(--line);
+  margin-left: -1px;
+  background: var(--surface-1);
+  color: var(--text-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.segmented button:first-child { margin-left: 0; border-radius: 4px 0 0 4px; }
+.segmented button:last-child { border-radius: 0 4px 4px 0; }
+.segmented button:hover { color: var(--text-1); }
+.segmented button.is-active {
+  background: var(--series-1);
+  border-color: var(--series-1);
+  color: #fff;
+  position: relative;
+}
+
+.slider-row { display: flex; align-items: center; gap: 14px; }
+.slider-row input[type="range"] { width: 260px; accent-color: var(--series-1); }
+.slider-value {
+  min-width: 5.5em;
+  font: 600 13px/1 "Helvetica Neue", Helvetica, sans-serif;
+  color: var(--text-1);
+}
+
+:where(button, input, summary):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ---- chart ---- */
+
+.blurb { margin: 0 0 4px; color: var(--text-2); font-size: 14px; }
+
+.chart { margin: 6px 0 0; }
+.chart svg { display: block; width: 100%; height: auto; }
+
+.grid { stroke: var(--line-soft); stroke-width: 1; }
+.axis { stroke: var(--line); stroke-width: 1; }
+
+/* Histogram bars TOUCH. That is the definition of a histogram and the whole
+   point of the Module 2 page, so the usual 2px gap between adjacent bars is
+   deliberately not used. A hairline surface-coloured stroke separates them. */
+.bar {
+  fill: var(--series-1-soft);
+  stroke: var(--series-1);
+  stroke-width: 1;
+  transition: x 260ms ease, y 260ms ease, width 260ms ease, height 260ms ease,
+              fill 120ms ease;
+}
+.bar.is-hover { fill: var(--series-1); }
+
+.ytick, .xtick {
+  font: 11px "Helvetica Neue", Helvetica, sans-serif;
+  fill: var(--text-3);
+}
+.axis-title {
+  font: 10px "Helvetica Neue", Helvetica, sans-serif;
+  letter-spacing: 0.06em;
+  fill: var(--text-3);
+}
+
+.readout {
+  min-height: 1.6em;
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--text-2);
+}
+.readout-idle { color: var(--text-3); }
+
+/* ---- stats and notes ---- */
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 40px;
+  margin: 22px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.stats div { margin: 0; }
+.stats dt {
+  font: 600 10px/1 "Helvetica Neue", Helvetica, sans-serif;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.stats dd {
+  margin: 6px 0 0;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  max-width: 62ch;
+  margin: 22px 0 0;
+  color: var(--text-2);
+  font-size: 14px;
+}
+
+.table-view { margin-top: 26px; font-size: 14px; }
+.table-view summary {
+  cursor: pointer;
+  color: var(--text-2);
+  font: 13px "Helvetica Neue", Helvetica, sans-serif;
+}
+.table-view table {
+  margin-top: 14px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.table-view th, .table-view td {
+  padding: 5px 20px 5px 0;
+  text-align: left;
+  border-bottom: 1px solid var(--line-soft);
+}
+.table-view th {
+  font: 600 10px/1 "Helvetica Neue", Helvetica, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.table-view tr.total td { border-bottom: 0; font-weight: 600; }
+
+@media (max-width: 720px) {
+  .app { flex-direction: column; }
+  .sidebar { flex: none; border-right: 0; border-bottom: 1px solid var(--line); padding: 18px 0; }
+  .content { padding: 26px 20px 60px; }
+  .slider-row input[type="range"] { width: 180px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar { transition: fill 120ms ease; }
+}
