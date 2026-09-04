@@ -34,6 +34,12 @@ for (const scheme of ["light", "dark"]) {
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${out}/${scheme}-narrow.png` });
 
+  // Raw values on, back at the default width.
+  await slider.fill(String(Math.round(max / 3)));
+  await page.getByLabel("Show every value").check();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${out}/${scheme}-raw.png`, fullPage: true });
+
   await ctx.close();
 }
 

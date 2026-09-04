@@ -8,9 +8,18 @@ type Props = {
   total: number;
   /** Show proportions on the vertical axis instead of counts. */
   relative: boolean;
+  /** Every observation, drawn as a rug under the axis. */
+  values?: number[];
 };
 
 const PAD = { top: 30, right: 14, bottom: 40, left: 46 };
+const RUG_H = 38;
+
+/** Deterministic 0..1 from an index, so the jitter does not dance on re-render. */
+function jitter(i: number): number {
+  const x = Math.sin(i * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
+}
 const W = 720;
 const H = 346;
 
@@ -27,7 +36,7 @@ function ticksFor(max: number, relative: boolean): number[] {
   return relative ? out.map((t) => Math.round(t * 1e6) / 1e6) : out;
 }
 
-export function Histogram({ bins, decimals, units, total, relative }: Props) {
+export function Histogram({ bins, decimals, units, total, relative, values }: Props) {
   const [hover, setHover] = useState<number | null>(null);
   const clipId = useId();
 
@@ -36,8 +45,13 @@ export function Histogram({ bins, decimals, units, total, relative }: Props) {
   const ticks = ticksFor(peak, relative);
   const yMax = ticks[ticks.length - 1];
 
+  const rug = values ?? null;
+  const svgH = H + (rug ? RUG_H : 0);
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
+  const xLo = bins.length ? bins[0].lo : 0;
+  const xHi = bins.length ? bins[bins.length - 1].hi : 1;
+  const xAt = (v: number) => PAD.left + (plotW * (v - xLo)) / (xHi - xLo);
   const bw = plotW / bins.length;
 
   const fmt = (v: number) => v.toFixed(decimals);
@@ -48,7 +62,7 @@ export function Histogram({ bins, decimals, units, total, relative }: Props) {
 
   return (
     <figure className="chart">
-      <svg viewBox={`0 0 ${W} ${H}`} role="img"
+      <svg viewBox={`0 0 ${W} ${svgH}`} role="img"
            aria-label={`Histogram of ${bins.length} classes`}>
         <defs>
           <clipPath id={clipId}>
@@ -110,6 +124,21 @@ export function Histogram({ bins, decimals, units, total, relative }: Props) {
         <text className="axis-title" x={PAD.left + plotW} y={H - 6} textAnchor="end">
           {units}
         </text>
+
+        {rug ? (
+          <g className="rug">
+            <text className="axis-title" x={PAD.left - 38} y={H + 8}>
+              Values
+            </text>
+            {/* Jittered vertically. These datasets are whole numbers with many
+                repeats, so drawing one tick per value stacks them all on the
+                same line and the strip reads as an evenly spaced ruler, which
+                is the opposite of the truth. Spreading them lets density show. */}
+            {rug.map((v, i) => (
+              <circle key={i} cx={xAt(v)} cy={H + 6 + jitter(i) * (RUG_H - 16)} r={1.6} />
+            ))}
+          </g>
+        ) : null}
       </svg>
 
       <div className="readout" aria-live="polite">

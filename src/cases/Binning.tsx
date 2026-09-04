@@ -6,6 +6,7 @@ export function Binning() {
   const [dsIndex, setDsIndex] = useState(0);
   const [widthIndex, setWidthIndex] = useState(datasets[0].defaultWidth);
   const [relative, setRelative] = useState(false);
+  const [showRaw, setShowRaw] = useState(false);
 
   const ds = datasets[dsIndex];
   const width = ds.widths[Math.min(widthIndex, ds.widths.length - 1)];
@@ -20,6 +21,8 @@ export function Binning() {
   }
 
   const occupied = bins.filter((b) => b.count > 0).length;
+  const sorted = useMemo(() => [...ds.values].sort((a, b) => a - b), [ds]);
+  const distinct = useMemo(() => new Set(ds.values).size, [ds]);
 
   return (
     <section className="case">
@@ -70,6 +73,18 @@ export function Binning() {
         </div>
 
         <div className="control">
+          <span className="control-label">Raw data</span>
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={showRaw}
+              onChange={(e) => setShowRaw(e.target.checked)}
+            />
+            <span>Show every value</span>
+          </label>
+        </div>
+
+        <div className="control">
           <span className="control-label">Vertical axis</span>
           <div className="segmented" role="group" aria-label="Choose the vertical axis">
             <button type="button" className={!relative ? "is-active" : ""}
@@ -94,6 +109,7 @@ export function Binning() {
         units={ds.units}
         total={ds.values.length}
         relative={relative}
+        values={showRaw ? ds.values : undefined}
       />
 
       <dl className="stats">
@@ -103,10 +119,25 @@ export function Binning() {
         <div><dt>Tallest class</dt><dd>{Math.max(...bins.map((b) => b.count))}</dd></div>
       </dl>
 
+      {showRaw ? (
+        <div className="raw">
+          <p className="raw-head">
+            All <strong>{ds.values.length}</strong> values, sorted.{" "}
+            <span className="raw-sub">
+              {distinct} distinct. The classes are a choice laid over these; the
+              numbers themselves do not change.
+            </span>
+          </p>
+          <p className="raw-values">
+            {sorted.map((v) => v.toFixed(ds.decimals)).join("  ")}
+          </p>
+        </div>
+      ) : null}
+
       <p className="note">{ds.packetNote}</p>
 
       <details className="table-view">
-        <summary>Show the numbers</summary>
+        <summary>Show the class table</summary>
         <table>
           <thead>
             <tr><th>Class</th><th>Frequency</th><th>Relative frequency</th></tr>

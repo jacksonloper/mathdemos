@@ -29,14 +29,20 @@ function lcg(seed: number) {
 const rand = lcg(20260904);
 
 /**
- * Scatter `count` values inside [lo, hi) so the class holds exactly `count` of
- * them. Positions are random rather than evenly spaced: spreading them evenly
- * makes every narrower binning come out artificially smooth, which hides the
- * very thing this case study exists to show.
+ * Scatter `count` whole-number values inside [lo, hi) so the class holds exactly
+ * `count` of them. Two things matter here:
+ *
+ * - Positions are random rather than evenly spaced. Spreading them evenly makes
+ *   every narrower binning come out artificially smooth, hiding the very thing
+ *   this demo exists to show.
+ * - Values are whole numbers, because the demo can show the raw data and
+ *   heights measured to four decimal places would give the game away. The
+ *   packet says "to the nearest inch", so that is what these are.
  */
 function fill(lo: number, hi: number, count: number): number[] {
+  const span = Math.round(hi - lo);
   const out: number[] = [];
-  for (let i = 0; i < count; i++) out.push(lo + (hi - lo) * (0.002 + 0.996 * rand()));
+  for (let i = 0; i < count; i++) out.push(lo + Math.min(span - 1, Math.floor(rand() * span)));
   return out;
 }
 
