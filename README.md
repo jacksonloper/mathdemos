@@ -1,5 +1,7 @@
 # mathdemos
 
+main is live at https://main--mathdemos.netlify.app/
+
 Brief math demos suitable for explaining a specific concept.
 
 Each demo takes one idea that a static page cannot show and makes it draggable.
