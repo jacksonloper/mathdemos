@@ -54,14 +54,14 @@ button, input { font: inherit; }
 }
 
 .brand { padding: 0 22px 20px; }
-.brand-course {
+.brand-kicker {
   display: block;
   font: 600 11px/1 "Helvetica Neue", Helvetica, sans-serif;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--text-3);
 }
-.brand-sub {
+.brand-name {
   display: block;
   margin-top: 5px;
   font-size: 17px;
@@ -87,7 +87,7 @@ button, input { font: inherit; }
   color: var(--text-1);
 }
 .nav-title { display: block; }
-.nav-module {
+.nav-meta {
   display: block;
   font: 10px/1.4 "Helvetica Neue", Helvetica, sans-serif;
   letter-spacing: 0.07em;

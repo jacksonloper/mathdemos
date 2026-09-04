@@ -3,8 +3,8 @@
 Brief math demos suitable for explaining a specific concept.
 
 Each demo takes one idea that a static page cannot show and makes it draggable.
-They are built as case studies in a single Vite + React + TypeScript app and
-deployed to Netlify.
+They live as case studies in a single Vite + React + TypeScript app, deployed to
+Netlify. Adding a demo means adding a component and a line, not a new project.
 
 ```
 npm install
@@ -15,9 +15,12 @@ npm run shoot    # screenshots to shots/ (dev server must be running)
 
 ## Demos
 
-| id | Course | What it shows |
-|----|--------|---------------|
-| `binning` | MTH 160X, Module 2 | Class width changes the picture. Same data, a slider on the width, and a toggle between a frequency and a relative-frequency axis. |
+| id | Topic | Used in | What it shows |
+|----|-------|---------|---------------|
+| `binning` | Histograms | MTH 160X, Module 2 | Class width changes the picture. Same data, a slider on the width, and a toggle between a frequency and a relative-frequency axis. |
+
+A demo names its own course in the registry, or omits it. The app itself is not
+tied to a course.
 
 ## Adding one
 

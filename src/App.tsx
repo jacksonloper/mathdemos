@@ -9,8 +9,8 @@ export default function App() {
     <div className="app">
       <nav className="sidebar">
         <div className="brand">
-          <span className="brand-course">MTH 160X</span>
-          <span className="brand-sub">Case studies</span>
+          <span className="brand-kicker">Math</span>
+          <span className="brand-name">Demos</span>
         </div>
         <ul>
           {caseStudies.map((c, i) => (
@@ -22,7 +22,10 @@ export default function App() {
                 onClick={() => setActive(i)}
               >
                 <span className="nav-title">{c.title}</span>
-                <span className="nav-module">{c.module}</span>
+                <span className="nav-meta">
+                  {c.topic}
+                  {c.course ? ` · ${c.course}` : ""}
+                </span>
               </button>
             </li>
           ))}

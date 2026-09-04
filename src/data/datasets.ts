@@ -1,5 +1,5 @@
-// Datasets used by the case studies. Every one of these also appears in the
-// printed Module 2 packet, so a number on screen can be pointed at on paper.
+// Datasets shared by the demos. These all also appear in the printed MTH 160X
+// Module 2 packet, so a number on screen can be pointed at on paper.
 
 export type Dataset = {
   id: string;
@@ -65,7 +65,7 @@ export const datasets: Dataset[] = [
     origin: 58,
     decimals: 0,
     packetNote:
-      "Packet p16 and p17 draw this at width 2. The tallest class holds 66 people, which is 20% of 330.",
+      "MTH 160X packet p16 and p17 draw this at width 2. The tallest class holds 66 people, which is 20% of 330.",
   },
   {
     id: "grades",
@@ -79,7 +79,7 @@ export const datasets: Dataset[] = [
     origin: 60,
     decimals: 0,
     packetNote:
-      "Packet p15 draws this at width 3. ALEKS draws the same item at width 1, where reading the width off the axis takes no thought.",
+      "MTH 160X packet p15 draws this at width 3. ALEKS draws the same item at width 1, where reading the width off the axis takes no thought.",
   },
   {
     id: "batting",
@@ -96,7 +96,7 @@ export const datasets: Dataset[] = [
     origin: 200,
     decimals: 0,
     packetNote:
-      "Packet p7 to p11 builds this by hand at width 20, giving six classes. With 20 values, small widths leave most classes empty.",
+      "MTH 160X packet p7 to p11 builds this by hand at width 20, giving six classes. With 20 values, small widths leave most classes empty.",
   },
   {
     id: "temps",
@@ -114,7 +114,7 @@ export const datasets: Dataset[] = [
     origin: 50,
     decimals: 0,
     packetNote:
-      "Packet p19 to p22 plots this as a stem-and-leaf. Width 10 is the stem-and-leaf; width 5 is the split-stem version.",
+      "MTH 160X packet p19 to p22 plots this as a stem-and-leaf. Width 10 is the stem-and-leaf; width 5 is the split-stem version.",
   },
   {
     id: "cavities",
@@ -131,7 +131,7 @@ export const datasets: Dataset[] = [
     origin: 0,
     decimals: 0,
     packetNote:
-      "Packet p23 draws this as a dot plot, which is a histogram of width 1. Widen it and the right tail disappears into one bar.",
+      "MTH 160X packet p23 draws this as a dot plot, which is a histogram of width 1. Widen it and the right tail disappears into one bar.",
   },
 ];
 
