@@ -113,7 +113,7 @@ button, input { font: inherit; }
 .controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 22px 32px;
+  gap: 22px 30px;
   align-items: flex-end;
   margin: 28px 0 18px;
   padding-bottom: 20px;
@@ -201,6 +201,36 @@ button, input { font: inherit; }
   color: var(--text-2);
 }
 .readout-idle { color: var(--text-3); }
+
+.toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.toggle input { accent-color: var(--series-1); width: 15px; height: 15px; }
+
+/* Every observation as a dot under the axis, jittered vertically so repeated
+   values pile up visibly instead of landing on top of each other. Nothing here
+   is binned: this is the data itself. */
+.rug circle {
+  fill: var(--text-1);
+  opacity: 0.34;
+}
+
+.raw {
+  margin: 22px 0 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-1);
+}
+.raw-head { margin: 0 0 10px; font-size: 14px; color: var(--text-2); }
+.raw-sub { color: var(--text-3); }
+.raw-values {
+  margin: 0;
+  max-height: 190px;
+  overflow-y: auto;
+  font: 12px/1.9 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-1);
+  word-spacing: 0.15em;
+}
 
 /* ---- stats and notes ---- */
 
