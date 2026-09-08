@@ -146,11 +146,12 @@ export function Histogram({ bins, decimals, units, total, relative, values }: Pr
           <span className="readout-idle">Hover a bar to read its class.</span>
         ) : (
           <span>
+            <strong>{bins[hover].count}</strong>{" "}
+            {bins[hover].count === 1 ? "value is" : "values are"}{" "}
             <strong>
-              {fmt(bins[hover].lo)} to {fmt(bins[hover].hi)}
-            </strong>{" "}
-            holds <strong>{bins[hover].count}</strong>{" "}
-            {bins[hover].count === 1 ? "value" : "values"}, which is{" "}
+              at least {fmt(bins[hover].lo)} and less than {fmt(bins[hover].hi)}
+            </strong>
+            , which is{" "}
             <strong>{((100 * bins[hover].count) / total).toFixed(1)}%</strong> of {total}.
           </span>
         )}
