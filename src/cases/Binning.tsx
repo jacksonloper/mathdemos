@@ -140,20 +140,22 @@ export function Binning() {
         <summary>Show the class table</summary>
         <table>
           <thead>
-            <tr><th>Class</th><th>Frequency</th><th>Relative frequency</th></tr>
+            <tr>
+              <th>At least</th><th>Less than</th>
+              <th>Frequency</th><th>Relative frequency</th>
+            </tr>
           </thead>
           <tbody>
             {bins.map((b, i) => (
               <tr key={i}>
-                <td>
-                  {b.lo.toFixed(ds.decimals)} to {b.hi.toFixed(ds.decimals)}
-                </td>
+                <td>{b.lo.toFixed(ds.decimals)}</td>
+                <td>{b.hi.toFixed(ds.decimals)}</td>
                 <td>{b.count}</td>
                 <td>{(b.count / ds.values.length).toFixed(3)}</td>
               </tr>
             ))}
             <tr className="total">
-              <td>Total</td>
+              <td colSpan={2}>Total</td>
               <td>{ds.values.length}</td>
               <td>1.000</td>
             </tr>
