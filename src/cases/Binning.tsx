@@ -134,7 +134,7 @@ export function Binning() {
         </div>
       ) : null}
 
-      <p className="note">{ds.packetNote}</p>
+      <p className="note">{ds.note}</p>
 
       <details className="table-view">
         <summary>Show the class table</summary>

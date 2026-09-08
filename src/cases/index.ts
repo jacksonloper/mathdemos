@@ -15,7 +15,6 @@ export const caseStudies: CaseStudy[] = [
   {
     id: "binning",
     title: "Class width",
-    course: "MTH 160X",
     topic: "Histograms",
     Component: Binning,
   },

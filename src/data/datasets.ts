@@ -1,5 +1,5 @@
-// Datasets shared by the demos. These all also appear in the printed MTH 160X
-// Module 2 packet, so a number on screen can be pointed at on paper.
+// Datasets shared by the demos. Each one is small enough to print, so a number
+// on screen can be checked by hand.
 
 export type Dataset = {
   id: string;
@@ -11,14 +11,14 @@ export type Dataset = {
   values: number[];
   /** Bin widths the slider may take, smallest first. */
   widths: number[];
-  /** Index into `widths` the case study opens on: the packet's own binning. */
+  /** Index into `widths` the case study opens on. */
   defaultWidth: number;
   /** Where the first class starts, in data units. */
   origin: number;
   /** Decimal places to show on axis labels. */
   decimals: number;
-  /** What the packet says about this data, shown under the chart. */
-  packetNote: string;
+  /** A line about this data, shown under the chart. */
+  note: string;
 };
 
 /** Deterministic PRNG, so the picture is identical on every load. */
@@ -37,7 +37,7 @@ const rand = lcg(20260904);
  *   this demo exists to show.
  * - Values are whole numbers, because the demo can show the raw data and
  *   heights measured to four decimal places would give the game away. The
- *   packet says "to the nearest inch", so that is what these are.
+ *   are measured to the nearest inch, so that is what these are.
  */
 function fill(lo: number, hi: number, count: number): number[] {
   const span = Math.round(hi - lo);
@@ -46,13 +46,13 @@ function fill(lo: number, hi: number, count: number): number[] {
   return out;
 }
 
-/** Heights of 330 adults. At width 2 from 58 this is the packet's page 16. */
+/** Heights of 330 adults, to the nearest inch. */
 const heights = [
   [58, 60, 5], [60, 62, 12], [62, 64, 28], [64, 66, 48], [66, 68, 66],
   [68, 70, 63], [70, 72, 47], [72, 74, 32], [74, 76, 20], [76, 78, 9],
 ].flatMap(([lo, hi, n]) => fill(lo, hi, n));
 
-/** Final grades of 100 students. At width 3 from 60 this is the packet's page 15. */
+/** Final grades of 100 students. */
 const grades = [
   [60, 63, 3], [63, 66, 6], [66, 69, 9], [69, 72, 14], [72, 75, 18],
   [75, 78, 15], [78, 81, 12], [81, 84, 9], [84, 87, 7], [87, 90, 4], [90, 93, 3],
@@ -70,8 +70,8 @@ export const datasets: Dataset[] = [
     defaultWidth: 1,
     origin: 58,
     decimals: 0,
-    packetNote:
-      "MTH 160X packet p16 and p17 draw this at width 2. The tallest class holds 66 people, which is 20% of 330.",
+    note:
+      "At width 2 the tallest class holds 66 of the 330 people, which is 20%. Widen it and that 20% is split or swallowed.",
   },
   {
     id: "grades",
@@ -84,8 +84,8 @@ export const datasets: Dataset[] = [
     defaultWidth: 2,
     origin: 60,
     decimals: 0,
-    packetNote:
-      "MTH 160X packet p15 draws this at width 3. ALEKS draws the same item at width 1, where reading the width off the axis takes no thought.",
+    note:
+      "Width 1 puts a class on every point, so the width can be read straight off the axis. Width 3 groups them into bands.",
   },
   {
     id: "batting",
@@ -98,11 +98,11 @@ export const datasets: Dataset[] = [
       272, 237, 298, 250, 319, 296, 254, 310, 299, 228,
     ],
     widths: [5, 10, 20, 25, 40, 60],
-    defaultWidth: 2,
+    defaultWidth: 3,
     origin: 200,
     decimals: 0,
-    packetNote:
-      "MTH 160X packet p7 to p11 builds this by hand at width 20, giving six classes. With 20 values, small widths leave most classes empty.",
+    note:
+      "Twenty values spread over 120, so narrow widths leave most classes empty and the shape stops meaning anything. Width 25 gives five classes.",
   },
   {
     id: "temps",
@@ -119,8 +119,8 @@ export const datasets: Dataset[] = [
     defaultWidth: 4,
     origin: 50,
     decimals: 0,
-    packetNote:
-      "MTH 160X packet p19 to p22 plots this as a stem-and-leaf. Width 10 is the stem-and-leaf; width 5 is the split-stem version.",
+    note:
+      "Width 10 is what a stem-and-leaf plot of these values shows. Width 5 is the split-stem version of the same plot.",
   },
   {
     id: "cavities",
@@ -136,8 +136,8 @@ export const datasets: Dataset[] = [
     defaultWidth: 0,
     origin: 0,
     decimals: 0,
-    packetNote:
-      "MTH 160X packet p23 draws this as a dot plot, which is a histogram of width 1. Widen it and the right tail disappears into one bar.",
+    note:
+      "Width 1 is a dot plot: one class per whole number. Widen it and the long right tail collapses into a single bar.",
   },
 ];
 
