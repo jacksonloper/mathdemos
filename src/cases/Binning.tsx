@@ -1,12 +1,11 @@
 import { useMemo, useState } from "react";
 import { Histogram } from "../components/Histogram";
-import { binValues, datasets, formatValue } from "../data/datasets";
+import { binDomain, binValues, datasets, formatValue } from "../data/datasets";
 
 export function Binning() {
   const [dsIndex, setDsIndex] = useState(0);
   const [widthIndex, setWidthIndex] = useState(datasets[0].defaultWidth);
   const [relative, setRelative] = useState(false);
-  const [showRaw, setShowRaw] = useState(false);
 
   const ds = datasets[dsIndex];
   const width = ds.widths[Math.min(widthIndex, ds.widths.length - 1)];
@@ -14,11 +13,18 @@ export function Binning() {
     () => binValues(ds.values, width, ds.origin),
     [ds, width],
   );
+  const domain = useMemo(() => binDomain(ds), [ds]);
 
   function pickDataset(i: number) {
     setDsIndex(i);
     setWidthIndex(datasets[i].defaultWidth);
   }
+
+  // A width is a quantity in the data's own units, so money is written as
+  // money: "$100k", not "100000 dollars".
+  const widthLabel = ds.currency
+    ? formatValue(ds, width)
+    : `${width} ${width === 1 ? ds.unit : ds.units}`;
 
   const occupied = bins.filter((b) => b.count > 0).length;
   const sorted = useMemo(() => [...ds.values].sort((a, b) => a - b), [ds]);
@@ -66,22 +72,8 @@ export function Binning() {
               value={Math.min(widthIndex, ds.widths.length - 1)}
               onChange={(e) => setWidthIndex(Number(e.target.value))}
             />
-            <output className="slider-value">
-              {width} {width === 1 ? ds.unit : ds.units}
-            </output>
+            <output className="slider-value">{widthLabel}</output>
           </div>
-        </div>
-
-        <div className="control">
-          <span className="control-label">Raw data</span>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={showRaw}
-              onChange={(e) => setShowRaw(e.target.checked)}
-            />
-            <span>Show every value</span>
-          </label>
         </div>
 
         <div className="control">
@@ -109,30 +101,33 @@ export function Binning() {
         units={ds.units}
         total={ds.values.length}
         relative={relative}
-        values={showRaw ? ds.values : undefined}
+        domain={domain}
       />
 
       <dl className="stats">
         <div><dt>Classes</dt><dd>{bins.length}</dd></div>
-        <div><dt>Class width</dt><dd>{width}</dd></div>
+        <div><dt>Class width</dt><dd>{widthLabel}</dd></div>
         <div><dt>Classes with data</dt><dd>{occupied}</dd></div>
         <div><dt>Tallest class</dt><dd>{Math.max(...bins.map((b) => b.count))}</dd></div>
       </dl>
 
-      {showRaw ? (
-        <div className="raw">
-          <p className="raw-head">
-            All <strong>{ds.values.length}</strong> values, sorted.{" "}
-            <span className="raw-sub">
-              {distinct} distinct. The classes are a choice laid over these; the
-              numbers themselves do not change.
-            </span>
-          </p>
-          <p className="raw-values">
-            {sorted.map((v) => formatValue(ds, v)).join("  ")}
-          </p>
-        </div>
-      ) : null}
+      {/* Always on. The data is the point of the page, and hiding it behind a
+          checkbox invites reading the bars as if they were the thing itself.
+          It is a list rather than a picture on purpose: a dot plot of the
+          briefcase prizes, which run from one cent to a million dollars,
+          would be a smear against the left edge. */}
+      <div className="raw">
+        <p className="raw-head">
+          All <strong>{ds.values.length}</strong> values, sorted.{" "}
+          <span className="raw-sub">
+            {distinct} distinct. The classes are a choice laid over these; the
+            numbers themselves do not change.
+          </span>
+        </p>
+        <p className="raw-values">
+          {sorted.map((v) => formatValue(ds, v)).join("  ")}
+        </p>
+      </div>
 
       <p className="note">{ds.note}</p>
 
