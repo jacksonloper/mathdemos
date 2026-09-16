@@ -346,3 +346,25 @@ export function levellingSplit(values: number[], width: number, origin: number):
   }
   return best;
 }
+
+/**
+ * The x range the histogram is drawn on, fixed for a dataset whatever class
+ * width is chosen: the union of the ranges every width produces.
+ *
+ * Without this the axis rescales as the slider moves, and a value slides
+ * across the screen while the shape is supposed to be the thing changing.
+ * With it, a value keeps its place and the only thing that moves is the
+ * binning, which is what the demo is about. The cost is some empty axis at the
+ * narrow end, where the widest classes overshoot the data.
+ */
+export function binDomain(ds: Dataset): [number, number] {
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (const w of ds.widths) {
+    const bins = binValues(ds.values, w, ds.origin);
+    if (!bins.length) continue;
+    lo = Math.min(lo, bins[0].lo);
+    hi = Math.max(hi, bins[bins.length - 1].hi);
+  }
+  return [lo, hi];
+}

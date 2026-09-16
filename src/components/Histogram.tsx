@@ -9,18 +9,14 @@ type Props = {
   total: number;
   /** Show proportions on the vertical axis instead of counts. */
   relative: boolean;
-  /** Every observation, drawn as a rug under the axis. */
-  values?: number[];
+  /**
+   * The x range to draw on. Fixed for a dataset across every class width, so
+   * a value keeps its place on the screen while the binning changes around it.
+   */
+  domain: [number, number];
 };
 
 const PAD = { top: 30, right: 14, bottom: 40, left: 46 };
-const RUG_H = 38;
-
-/** Deterministic 0..1 from an index, so the jitter does not dance on re-render. */
-function jitter(i: number): number {
-  const x = Math.sin(i * 12.9898) * 43758.5453;
-  return x - Math.floor(x);
-}
 const W = 720;
 const H = 346;
 
@@ -37,7 +33,7 @@ function ticksFor(max: number, relative: boolean): number[] {
   return relative ? out.map((t) => Math.round(t * 1e6) / 1e6) : out;
 }
 
-export function Histogram({ bins, format, units, total, relative, values }: Props) {
+export function Histogram({ bins, format, units, total, relative, domain }: Props) {
   const [hover, setHover] = useState<number | null>(null);
   const clipId = useId();
 
@@ -46,14 +42,10 @@ export function Histogram({ bins, format, units, total, relative, values }: Prop
   const ticks = ticksFor(peak, relative);
   const yMax = ticks[ticks.length - 1];
 
-  const rug = values ?? null;
-  const svgH = H + (rug ? RUG_H : 0);
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
-  const xLo = bins.length ? bins[0].lo : 0;
-  const xHi = bins.length ? bins[bins.length - 1].hi : 1;
+  const [xLo, xHi] = domain;
   const xAt = (v: number) => PAD.left + (plotW * (v - xLo)) / (xHi - xLo);
-  const bw = plotW / bins.length;
 
   const fmt = format;
   const fmtY = (v: number) => (relative ? v.toFixed(2) : String(v));
@@ -63,7 +55,7 @@ export function Histogram({ bins, format, units, total, relative, values }: Prop
 
   return (
     <figure className="chart">
-      <svg viewBox={`0 0 ${W} ${svgH}`} role="img"
+      <svg viewBox={`0 0 ${W} ${H}`} role="img"
            aria-label={`Histogram of ${bins.length} classes`}>
         <defs>
           <clipPath id={clipId}>
@@ -84,15 +76,18 @@ export function Histogram({ bins, format, units, total, relative, values }: Prop
         })}
 
         <g clipPath={`url(#${clipId})`}>
+          {/* Placed by value, not by index, so the bars sit where the numbers
+              say and the whole picture does not restretch when the width
+              slider moves. */}
           {bins.map((b, i) => {
             const h = (plotH * heightsOf(b)) / yMax;
             return (
               <rect
                 key={i}
                 className={"bar" + (hover === i ? " is-hover" : "")}
-                x={PAD.left + i * bw}
+                x={xAt(b.lo)}
                 y={PAD.top + plotH - h}
-                width={bw}
+                width={xAt(b.hi) - xAt(b.lo)}
                 height={h}
                 onMouseEnter={() => setHover(i)}
                 onMouseLeave={() => setHover(null)}
@@ -104,17 +99,20 @@ export function Histogram({ bins, format, units, total, relative, values }: Prop
         <line className="axis" x1={PAD.left} x2={PAD.left + plotW}
               y1={PAD.top + plotH} y2={PAD.top + plotH} />
 
+        {/* The ticks are the class edges, which is what the labels along the
+            bottom of a histogram are. They move as the classes change; the
+            scale they sit on does not. */}
         {bins.map((b, i) =>
           i % every === 0 ? (
-            <text key={i} className="xtick" x={PAD.left + i * bw}
+            <text key={i} className="xtick" x={xAt(b.lo)}
                   y={PAD.top + plotH + 16} textAnchor="middle">
               {fmt(b.lo)}
             </text>
           ) : null,
         )}
         {bins.length % every === 0 ? (
-          <text className="xtick" x={PAD.left + plotW} y={PAD.top + plotH + 16}
-                textAnchor="middle">
+          <text className="xtick" x={xAt(bins[bins.length - 1].hi)}
+                y={PAD.top + plotH + 16} textAnchor="middle">
             {fmt(bins[bins.length - 1].hi)}
           </text>
         ) : null}
@@ -126,20 +124,6 @@ export function Histogram({ bins, format, units, total, relative, values }: Prop
           {units}
         </text>
 
-        {rug ? (
-          <g className="rug">
-            <text className="axis-title" x={PAD.left - 38} y={H + 8}>
-              Values
-            </text>
-            {/* Jittered vertically. These datasets are whole numbers with many
-                repeats, so drawing one tick per value stacks them all on the
-                same line and the strip reads as an evenly spaced ruler, which
-                is the opposite of the truth. Spreading them lets density show. */}
-            {rug.map((v, i) => (
-              <circle key={i} cx={xAt(v)} cy={H + 6 + jitter(i) * (RUG_H - 16)} r={1.6} />
-            ))}
-          </g>
-        ) : null}
       </svg>
 
       <div className="readout" aria-live="polite">
