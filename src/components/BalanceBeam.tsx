@@ -61,29 +61,43 @@ export function BalanceBeam({ bins, split, mean, total, format, units }: Props) 
       <svg viewBox={`0 0 ${W} ${H}`} role="img"
            aria-label={`A beam loaded with ${total} values, resting on a pivot at ${format(split)}`}>
         <g transform={`rotate(${tilt} ${fx} ${fy})`}>
-          {/* Each class is stacked by COUNT: the part below the cut, the part
-              standing on the pivot, the part above. Most classes are wholly one
-              colour and read as a plain bar. Splitting by count rather than by
-              where the pivot line crosses the class keeps these colours equal
-              to the bars the pans and the pivot receive. */}
+          {/* A class is cut ACROSS, not stacked. On a beam the only thing a
+              weight has is its distance from the pivot, so a piece has to be
+              drawn where its values actually are: everything blue left of the
+              pivot, everything amber right of it, and the values recorded at
+              the cut itself standing on the pivot between them. Stacking the
+              three put all of a class's weight at one moment arm, which is the
+              one thing a beam cannot do.
+
+              Heights are the beam's own counts, not the pans': a value at the
+              cut has no leverage here even when the scales later borrow it. */}
           {bins.map((b, i) => {
             if (b.count === 0) return null;
             const x0 = xAt(b.lo);
-            const w = xAt(b.hi) - x0;
-            const hb = hAt(b.left);
-            const hm = hAt(b.mid);
-            const ha = hAt(b.right);
+            const x1 = xAt(b.hi);
+            const xc = Math.min(Math.max(xAt(split), x0), x1);
+            // What is left of the pivot fills the space left of it.
+            const parts = [];
+            if (b.below > 0 && xc > x0) {
+              parts.push({ k: "is-below", x: x0, w: xc - x0, h: hAt(b.below) });
+            }
+            // What is right of it is shared by the values standing on the cut,
+            // which sit hard against it, and the values genuinely above.
+            const rest = x1 - xc;
+            const rc = b.atCut + b.above;
+            if (rc > 0 && rest > 0) {
+              const gw = (rest * b.atCut) / rc;
+              if (b.atCut > 0) parts.push({ k: "is-mid", x: xc, w: gw, h: hAt(b.atCut) });
+              if (b.above > 0) {
+                parts.push({ k: "is-above", x: xc + gw, w: rest - gw, h: hAt(b.above) });
+              }
+            }
             return (
               <g key={i}>
-                {b.left > 0 ? (
-                  <rect className="load is-below" x={x0} y={BEAM_TOP - hb} width={w} height={hb} />
-                ) : null}
-                {b.mid > 0 ? (
-                  <rect className="load is-mid" x={x0} y={BEAM_TOP - hb - hm} width={w} height={hm} />
-                ) : null}
-                {b.right > 0 ? (
-                  <rect className="load is-above" x={x0} y={BEAM_TOP - hb - hm - ha} width={w} height={ha} />
-                ) : null}
+                {parts.map((p, j) => (
+                  <rect key={j} className={`load ${p.k}`}
+                        x={p.x} y={BEAM_TOP - p.h} width={p.w} height={p.h} />
+                ))}
               </g>
             );
           })}
