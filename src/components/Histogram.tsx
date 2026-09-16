@@ -3,7 +3,8 @@ import type { Bin } from "../data/datasets";
 
 type Props = {
   bins: Bin[];
-  decimals: number;
+  /** How a value is written. Datasets differ: 68, 0.275, $750. */
+  format: (v: number) => string;
   units: string;
   total: number;
   /** Show proportions on the vertical axis instead of counts. */
@@ -36,7 +37,7 @@ function ticksFor(max: number, relative: boolean): number[] {
   return relative ? out.map((t) => Math.round(t * 1e6) / 1e6) : out;
 }
 
-export function Histogram({ bins, decimals, units, total, relative, values }: Props) {
+export function Histogram({ bins, format, units, total, relative, values }: Props) {
   const [hover, setHover] = useState<number | null>(null);
   const clipId = useId();
 
@@ -54,7 +55,7 @@ export function Histogram({ bins, decimals, units, total, relative, values }: Pr
   const xAt = (v: number) => PAD.left + (plotW * (v - xLo)) / (xHi - xLo);
   const bw = plotW / bins.length;
 
-  const fmt = (v: number) => v.toFixed(decimals);
+  const fmt = format;
   const fmtY = (v: number) => (relative ? v.toFixed(2) : String(v));
 
   // Thin x labels so they never collide: show every k-th class edge.

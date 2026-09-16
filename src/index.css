@@ -10,6 +10,9 @@
   --text-3:    #86847e;
   --series-1:  #2a78d6;
   --series-1-soft: #cde2fb;
+  --series-2:  #b26a15;
+  --series-2-soft: #f2dcbc;
+  --ok:        #1d7a4c;
   --focus:     #2a78d6;
   color-scheme: light;
 }
@@ -25,6 +28,9 @@
     --text-3:    #8d8b81;
     --series-1:  #3987e5;
     --series-1-soft: #184f95;
+    --series-2:  #d8912f;
+    --series-2-soft: #6a4413;
+    --ok:        #43a771;
     --focus:     #3987e5;
     color-scheme: dark;
   }
@@ -172,9 +178,9 @@ button, input { font: inherit; }
 .grid { stroke: var(--line-soft); stroke-width: 1; }
 .axis { stroke: var(--line); stroke-width: 1; }
 
-/* Histogram bars TOUCH. That is the definition of a histogram and the whole
-   point of the Module 2 page, so the usual 2px gap between adjacent bars is
-   deliberately not used. A hairline surface-coloured stroke separates them. */
+/* Histogram bars TOUCH. That is the definition of a histogram, so the usual 2px
+   gap between adjacent bars is deliberately not used. A hairline
+   surface-coloured stroke separates them. */
 .bar {
   fill: var(--series-1-soft);
   stroke: var(--series-1);
@@ -295,4 +301,116 @@ button, input { font: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   .bar { transition: fill 120ms ease; }
+}
+
+/* ---- balance beam and scales ---- */
+
+/* One slider drives both machines, so the two pictures have to be close enough
+   together to watch at once. Nothing but a live readout goes between them: each
+   figure names itself inside its own SVG, and the prose explaining the pair
+   sits below both. */
+.fig-label {
+  font: 600 11px "Helvetica Neue", Helvetica, sans-serif;
+  letter-spacing: 0.04em;
+  fill: var(--text-2);
+}
+.panel-notes { margin-top: 22px; }
+.panel-notes p {
+  margin: 0 0 9px;
+  max-width: 62ch;
+  color: var(--text-2);
+  font-size: 14px;
+}
+.balance, .scales { margin-top: 20px; }
+.controls-tight { margin: 14px 0 6px; padding-bottom: 14px; }
+
+button.ghost {
+  padding: 6px 13px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-1);
+  color: var(--text-2);
+  cursor: pointer;
+}
+button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
+
+/* The beam and its load rotate together about the fulcrum, so the transition is
+   on the transform rather than on each bar. */
+.balance g[transform] { transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+.beam {
+  fill: var(--text-2);
+  stroke: var(--text-2);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+.beam.is-level { fill: var(--ok); stroke: var(--ok); }
+
+/* The colour says which side of the cut a class is on, and it is the same
+   colour on the beam and on the pan it is carried to. */
+.load { stroke-width: 1; }
+.load.is-below { fill: var(--series-1-soft); stroke: var(--series-1); }
+.load.is-above { fill: var(--series-2-soft); stroke: var(--series-2); }
+/* Neither side. A value sitting exactly on the cut has no moment arm on the
+   beam and costs nothing in the sum the median minimises, so it is drawn in
+   its own neutral colour, standing on the pivot. */
+.load.is-mid { fill: var(--line); stroke: var(--text-3); }
+
+.key-below, .key-above, .key-mid { font-size: 13px; }
+.key-below::before, .key-above::before, .key-mid::before {
+  content: "";
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 5px;
+  border: 1px solid;
+  vertical-align: baseline;
+}
+.key-below::before { background: var(--series-1-soft); border-color: var(--series-1); }
+.key-above::before { background: var(--series-2-soft); border-color: var(--series-2); }
+.key-mid::before { background: var(--line); border-color: var(--text-3); }
+.key-above, .key-mid { margin-left: 12px; }
+
+.fulcrum { fill: var(--text-3); }
+.fulcrum.is-level { fill: var(--ok); }
+.fulcrum-base { stroke: var(--text-3); stroke-width: 2.5; stroke-linecap: round; }
+.pivot-drop { stroke: var(--text-3); stroke-width: 1; stroke-dasharray: 2 4; }
+
+.post { stroke: var(--text-3); stroke-width: 4; stroke-linecap: round; }
+.beam-pin { fill: var(--text-2); }
+.chain { stroke: var(--text-3); stroke-width: 1; }
+.pan { fill: none; stroke: var(--text-2); stroke-width: 2; stroke-linecap: round; }
+.pan-count {
+  font: 600 19px "Helvetica Neue", Helvetica, sans-serif;
+  font-variant-numeric: tabular-nums;
+  fill: var(--text-1);
+}
+.pan-count.is-mid { font-size: 15px; fill: var(--text-2); }
+.pivot-shelf { stroke: var(--text-3); stroke-width: 2; stroke-linecap: round; }
+.label-mask { fill: var(--surface-0); }
+.pan-label {
+  font: 10px "Helvetica Neue", Helvetica, sans-serif;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  fill: var(--text-3);
+}
+
+.scales line.beam { fill: none; }
+.scales g { transition: none; }
+.scales .post, .scales .beam, .scales .chain, .scales .pan { transition: all 280ms ease; }
+
+.verdict {
+  font: 600 13px "Helvetica Neue", Helvetica, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  fill: var(--ok);
+}
+.tilt-hint {
+  font: 12px "Helvetica Neue", Helvetica, sans-serif;
+  fill: var(--text-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .balance g[transform], .scales .post, .scales .beam,
+  .scales .chain, .scales .pan { transition: none; }
 }

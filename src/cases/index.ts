@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import { Balance } from "./Balance";
 import { Binning } from "./Binning";
 
 export type CaseStudy = {
@@ -17,5 +18,11 @@ export const caseStudies: CaseStudy[] = [
     title: "Class width",
     topic: "Histograms",
     Component: Binning,
+  },
+  {
+    id: "balance",
+    title: "Mean and median",
+    topic: "Averages",
+    Component: Balance,
   },
 ];

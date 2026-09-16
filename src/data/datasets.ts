@@ -17,6 +17,8 @@ export type Dataset = {
   origin: number;
   /** Decimal places to show on axis labels. */
   decimals: number;
+  /** Money, so values are written $750 and $1M rather than 750 and 1000000. */
+  currency?: boolean;
   /** A line about this data, shown under the chart. */
   note: string;
 };
@@ -123,6 +125,25 @@ export const datasets: Dataset[] = [
       "Width 10 is what a stem-and-leaf plot of these values shows. Width 5 is the split-stem version of the same plot.",
   },
   {
+    id: "briefcases",
+    label: "Deal or No Deal",
+    blurb: "26 briefcase prizes",
+    units: "dollars",
+    unit: "dollar",
+    currency: true,
+    values: [
+      0.01, 1, 5, 10, 25, 50, 75, 100, 200, 300, 400, 500, 750,
+      1000, 5000, 10000, 25000, 50000, 75000, 100000,
+      200000, 300000, 400000, 500000, 750000, 1000000,
+    ],
+    widths: [50000, 100000, 250000, 500000],
+    defaultWidth: 1,
+    origin: 0,
+    decimals: 2,
+    note:
+      "Nineteen of the twenty-six cases hold under $100,000 and one holds a million. The mean prize is about $131,478 and the median is $875, so twenty of the twenty-six cases are worth less than average.",
+  },
+  {
     id: "cavities",
     label: "Cavities",
     blurb: "25 students",
@@ -140,6 +161,52 @@ export const datasets: Dataset[] = [
       "Width 1 is a dot plot: one class per whole number. Widen it and the long right tail collapses into a single bar.",
   },
 ];
+
+/** Drop trailing zeros: 1.5 stays 1.5, 2.0 becomes 2. */
+const trim = (x: number) => String(Math.round(x * 100) / 100);
+
+/**
+ * How a value is written on an axis, in a table, or in a readout.
+ *
+ * Money gets its own form because the briefcase data spans eight orders of
+ * magnitude. Written out, its axis reads 0.00, 100000.00, 200000.00 and the
+ * labels collide; written compactly it reads $0, $100k, $200k.
+ */
+export function formatValue(ds: Dataset, v: number): string {
+  if (!ds.currency) return v.toFixed(ds.decimals);
+  const a = Math.abs(v);
+  if (a > 0 && a < 1) return `$${v.toFixed(2)}`;
+  if (a >= 1e6) return `$${trim(v / 1e6)}M`;
+  if (a >= 1e3) return `$${trim(v / 1e3)}k`;
+  return `$${trim(v)}`;
+}
+
+/**
+ * A computed statistic, which needs more precision than an axis label. A mean
+ * of 4.08 cavities must not print as "4", and a mean prize of $131,477.54 must
+ * not print as "$131.48k".
+ */
+export function formatStat(ds: Dataset, v: number): string {
+  if (ds.currency) {
+    const cents = Math.abs(v - Math.round(v)) > 1e-9;
+    return `$${v.toLocaleString("en-US", {
+      minimumFractionDigits: cents ? 2 : 0,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+  return v.toFixed(Math.max(ds.decimals, 1));
+}
+
+export function mean(values: number[]): number {
+  return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+/** Sorts a copy, so the caller's array keeps its order. */
+export function median(values: number[]): number {
+  const s = [...values].sort((a, b) => a - b);
+  const mid = s.length >> 1;
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
 
 export type Bin = { lo: number; hi: number; count: number };
 
@@ -159,4 +226,123 @@ export function binValues(values: number[], width: number, origin: number): Bin[
     bins[i].count++;
   }
   return bins;
+}
+
+/**
+ * One class, with its values dealt to the two pans and the pivot.
+ *
+ * This is what the scales draw. The beam does not use it: there, a class is
+ * coloured by where the cut falls across it, not by where its values ended up.
+ */
+export type SplitBin = Bin & { left: number; right: number; mid: number };
+
+export type Split = {
+  bins: SplitBin[];
+  /** Strictly below the cut, exactly on it, strictly above. */
+  below: number;
+  onEdge: number;
+  above: number;
+  /** What each pan holds, and what is still standing on the pivot. */
+  leftPan: number;
+  rightPan: number;
+  middle: number;
+  level: boolean;
+};
+
+/**
+ * Cut the data at `s` and report what lands where.
+ *
+ * A value sitting exactly on the cut goes in neither pan. It stands on the
+ * pivot, which is the honest place for it: on the beam it has no moment arm,
+ * and in the sum of distances that the median minimises it contributes zero.
+ * It costs nothing to move, so it belongs to neither side until something
+ * asks it to pick one.
+ *
+ * When the pans are uneven, that is exactly what happens: as many of the
+ * values on the pivot as are needed step off onto the lighter pan, and the
+ * rest stay put. Nothing is split and nothing is invented. A value only moves
+ * when moving it closes the gap.
+ *
+ * The consequences fall out rather than being arranged. The pans come level
+ * exactly when `s` is a median. With an odd count and no ties, one value is
+ * left standing on the pivot with 12 a side, and that value is the median.
+ * With heights, where 33 people are recorded at exactly 68 inches, 21 of them
+ * step right to even 159 against 159 and 12 stay on the pivot: a whole run of
+ * cuts is a median, which is why the convention has to name one.
+ */
+export function splitBins(values: number[], width: number, origin: number, s: number): Split {
+  const bins = binValues(values, width, origin);
+  const n = bins.length;
+  const empty = {
+    bins: [], below: 0, onEdge: 0, above: 0,
+    leftPan: 0, rightPan: 0, middle: 0, level: true,
+  };
+  if (!n) return empty;
+
+  const start = bins[0].lo;
+  const left = new Array<number>(n).fill(0);
+  const right = new Array<number>(n).fill(0);
+  const mid = new Array<number>(n).fill(0);
+  let below = 0;
+  let onEdge = 0;
+  let above = 0;
+  let edgeBin = -1;
+
+  for (const v of values) {
+    const i = Math.min(n - 1, Math.floor((v - start) / width));
+    if (v < s) {
+      left[i]++;
+      below++;
+    } else if (v > s) {
+      right[i]++;
+      above++;
+    } else {
+      onEdge++;
+      edgeBin = i;
+    }
+  }
+
+  // Only as many as are needed step off the pivot, and only onto the lighter
+  // pan. The rest stay standing on it.
+  const diff = above - below;
+  const move = Math.min(onEdge, Math.abs(diff));
+  const toLeft = diff > 0 ? move : 0;
+  const toRight = diff < 0 ? move : 0;
+  if (edgeBin >= 0) {
+    left[edgeBin] += toLeft;
+    right[edgeBin] += toRight;
+    mid[edgeBin] += onEdge - move;
+  }
+  const leftPan = below + toLeft;
+  const rightPan = above + toRight;
+
+  return {
+    bins: bins.map((b, i) => ({ ...b, left: left[i], right: right[i], mid: mid[i] })),
+    below,
+    onEdge,
+    above,
+    leftPan,
+    rightPan,
+    middle: onEdge - move,
+    level: leftPan === rightPan,
+  };
+}
+
+/** The split closest to the median that levels the pans. */
+export function levellingSplit(values: number[], width: number, origin: number): number {
+  const distinct = [...new Set(values)].sort((a, b) => a - b);
+  const cands = [...distinct];
+  for (let i = 0; i < distinct.length - 1; i++) cands.push((distinct[i] + distinct[i + 1]) / 2);
+  const med = median(values);
+  let best = med;
+  let bestKey = [Infinity, Infinity];
+  for (const s of cands) {
+    const sp = splitBins(values, width, origin, s);
+    const key = [Math.abs(sp.leftPan - sp.rightPan), Math.abs(s - med)];
+    if (key[0] < bestKey[0] || (key[0] === bestKey[0] && key[1] < bestKey[1])) {
+      bestKey = key;
+      best = s;
+    }
+  }
+  return best;
 }
