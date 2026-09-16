@@ -1,10 +1,10 @@
-import type { Bin } from "../data/datasets";
+import type { SplitBin } from "../data/datasets";
 
 type Props = {
   /** The load, drawn as bars standing on the beam. */
-  bins: Bin[];
-  /** Where the fulcrum sits, in data units. */
-  pivot: number;
+  bins: SplitBin[];
+  /** Where the fulcrum sits, in data units. Also the colour split. */
+  split: number;
   /** The balance point. The beam is level exactly here. */
   mean: number;
   total: number;
@@ -28,23 +28,24 @@ const AXIS_Y = 250;
  */
 const MAX_TILT = 8;
 
-export function BalanceBeam({ bins, pivot, mean, total, format, units }: Props) {
+export function BalanceBeam({ bins, split, mean, total, format, units }: Props) {
   const lo = bins.length ? bins[0].lo : 0;
   const hi = bins.length ? bins[bins.length - 1].hi : 1;
   const plotW = W - PAD.left - PAD.right;
   const xAt = (v: number) => PAD.left + (plotW * (v - lo)) / (hi - lo);
   const peak = Math.max(1, ...bins.map((b) => b.count));
-  const bw = bins.length ? plotW / bins.length : plotW;
+  const hAt = (c: number) => (BAR_MAX * c) / peak;
 
-  // Torque about the fulcrum is the sum of (value - pivot) over every
-  // observation, which is n * (mean - pivot). So the beam is level exactly at
+  // Torque about the fulcrum is the sum of (value - split) over every
+  // observation, which is n * (mean - split). So the beam is level exactly at
   // the mean, and nowhere else. tanh saturates smoothly instead of clipping.
-  const off = (mean - pivot) / ((hi - lo) / 2);
+  const off = (mean - split) / ((hi - lo) / 2);
   const tilt = MAX_TILT * Math.tanh(2.6 * off);
-  const level = Math.abs(mean - pivot) < (hi - lo) * 0.0025;
+  const level = Math.abs(mean - split) < (hi - lo) * 1e-6;
 
-  const fx = xAt(pivot);
+  const fx = xAt(split);
   const fy = BEAM_TOP + BEAM_H / 2;
+  const hintX = Math.min(Math.max(fx, PAD.left + 70), W - PAD.right - 70);
 
   // Round axis ticks: five or so across the range, on a 1/2/2.5/5 step.
   const raw = (hi - lo) / 5;
@@ -56,20 +57,32 @@ export function BalanceBeam({ bins, pivot, mean, total, format, units }: Props) 
   return (
     <figure className="chart balance">
       <svg viewBox={`0 0 ${W} ${H}`} role="img"
-           aria-label={`A beam loaded with ${total} values, resting on a pivot at ${format(pivot)}`}>
+           aria-label={`A beam loaded with ${total} values, resting on a pivot at ${format(split)}`}>
         <g transform={`rotate(${tilt} ${fx} ${fy})`}>
-          {bins.map((b, i) =>
-            b.count > 0 ? (
-              <rect
-                key={i}
-                className="load"
-                x={PAD.left + i * bw}
-                y={BEAM_TOP - (BAR_MAX * b.count) / peak}
-                width={bw}
-                height={(BAR_MAX * b.count) / peak}
-              />
-            ) : null,
-          )}
+          {/* Each class is stacked: the part of it below the cut, then the part
+              above. Most classes are wholly one colour and read as a plain bar.
+              The one the pivot stands inside is split by COUNT, not by where
+              the pivot line falls across its width, so the colours here match
+              the bars the pans receive. Cutting it by position instead would
+              paint a class almost entirely one colour while most of its values
+              went to the other pan. */}
+          {bins.map((b, i) => {
+            if (b.count === 0) return null;
+            const x0 = xAt(b.lo);
+            const w = xAt(b.hi) - x0;
+            const hb = hAt(b.left);
+            const ha = hAt(b.right);
+            return (
+              <g key={i}>
+                {b.left > 0 ? (
+                  <rect className="load is-below" x={x0} y={BEAM_TOP - hb} width={w} height={hb} />
+                ) : null}
+                {b.right > 0 ? (
+                  <rect className="load is-above" x={x0} y={BEAM_TOP - hb - ha} width={w} height={ha} />
+                ) : null}
+              </g>
+            );
+          })}
           <rect className={"beam" + (level ? " is-level" : "")}
                 x={PAD.left - 6} y={BEAM_TOP} width={plotW + 12} height={BEAM_H} rx={2} />
         </g>
@@ -94,13 +107,14 @@ export function BalanceBeam({ bins, pivot, mean, total, format, units }: Props) 
           {units}
         </text>
 
+        {/* Kept clear of both edges: the pivot can sit hard against either one. */}
         {level ? (
-          <text className="verdict" x={fx} y={40} textAnchor="middle">
+          <text className="verdict" x={hintX} y={40} textAnchor="middle">
             Balanced
           </text>
         ) : (
-          <text className="tilt-hint" x={fx} y={40} textAnchor="middle">
-            {mean > pivot ? "the right side is heavier" : "the left side is heavier"}
+          <text className="tilt-hint" x={hintX} y={40} textAnchor="middle">
+            {mean > split ? "the right side pulls harder" : "the left side pulls harder"}
           </text>
         )}
       </svg>

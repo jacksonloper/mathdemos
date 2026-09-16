@@ -227,3 +227,99 @@ export function binValues(values: number[], width: number, origin: number): Bin[
   }
   return bins;
 }
+
+/** One class, with its values dealt to the two sides of a split. */
+export type SplitBin = Bin & { left: number; right: number };
+
+export type Split = {
+  bins: SplitBin[];
+  /** Strictly below the split, exactly on it, strictly above. */
+  below: number;
+  onEdge: number;
+  above: number;
+  /** What each pan ends up holding once the tied values are dealt out. */
+  leftPan: number;
+  rightPan: number;
+  level: boolean;
+};
+
+/**
+ * Cut the data at `s` and report what lands on each side.
+ *
+ * Values exactly equal to `s` are the interesting case. Heights are measured to
+ * the nearest inch, so 33 people are recorded as exactly 68 inches; the cut
+ * runs through them. They are dealt to whichever side needs them, which is what
+ * makes 165 against 165 reachable at all. Without that, no cut of this data
+ * splits it in half, because the tied block is wider than the gap.
+ *
+ * This is not a fudge: any `s` with neither side holding more than half is a
+ * median of the data, and dealing the ties is what that definition means.
+ */
+export function splitBins(values: number[], width: number, origin: number, s: number): Split {
+  const bins = binValues(values, width, origin);
+  const n = bins.length;
+  const empty = { bins: [], below: 0, onEdge: 0, above: 0, leftPan: 0, rightPan: 0, level: true };
+  if (!n) return empty;
+
+  const start = bins[0].lo;
+  const left = new Array<number>(n).fill(0);
+  const right = new Array<number>(n).fill(0);
+  let below = 0;
+  let onEdge = 0;
+  let above = 0;
+  let edgeBin = -1;
+
+  for (const v of values) {
+    const i = Math.min(n - 1, Math.floor((v - start) / width));
+    if (v < s) {
+      left[i]++;
+      below++;
+    } else if (v > s) {
+      right[i]++;
+      above++;
+    } else {
+      onEdge++;
+      edgeBin = i;
+    }
+  }
+
+  const a = Math.max(0, Math.min(onEdge, Math.round((above - below + onEdge) / 2)));
+  if (edgeBin >= 0) {
+    left[edgeBin] += a;
+    right[edgeBin] += onEdge - a;
+  }
+  const leftPan = below + a;
+  const rightPan = above + (onEdge - a);
+
+  return {
+    bins: bins.map((b, i) => ({ ...b, left: left[i], right: right[i] })),
+    below,
+    onEdge,
+    above,
+    leftPan,
+    rightPan,
+    level: leftPan === rightPan,
+  };
+}
+
+/**
+ * The split closest to the median that actually levels the pans, or when none
+ * does (an odd count), the one that comes closest.
+ */
+export function levellingSplit(values: number[], width: number, origin: number): number {
+  const distinct = [...new Set(values)].sort((a, b) => a - b);
+  const cands = [...distinct];
+  for (let i = 0; i < distinct.length - 1; i++) cands.push((distinct[i] + distinct[i + 1]) / 2);
+  const med = median(values);
+  let best = med;
+  let bestKey = [Infinity, Infinity];
+  for (const s of cands) {
+    const sp = splitBins(values, width, origin, s);
+    const key = [Math.abs(sp.leftPan - sp.rightPan), Math.abs(s - med)];
+    if (key[0] < bestKey[0] || (key[0] === bestKey[0] && key[1] < bestKey[1])) {
+      bestKey = key;
+      best = s;
+    }
+  }
+  return best;
+}

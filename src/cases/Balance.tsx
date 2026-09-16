@@ -1,55 +1,81 @@
 import { useMemo, useState } from "react";
 import { BalanceBeam } from "../components/BalanceBeam";
 import { Scales } from "../components/Scales";
-import { binValues, datasets, formatStat, formatValue, mean, median } from "../data/datasets";
+import {
+  datasets, formatStat, formatValue, levellingSplit, mean, median, splitBins,
+} from "../data/datasets";
 
-/** The pivot slider gets this many stops across the data, so the mean is reachable. */
-const STOPS = 600;
+/** Stops on the split slider. Fine enough to feel continuous. */
+const STOPS = 700;
 
 export function Balance() {
   const [dsIndex, setDsIndex] = useState(0);
   const ds = datasets[dsIndex];
+  // The narrowest width this data offers, so the classes are fine enough to
+  // hop one at a time rather than in great slabs.
+  const width = ds.widths[0];
 
-  const stats = useMemo(() => {
+  const d = useMemo(() => {
     const sorted = [...ds.values].sort((a, b) => a - b);
     const lo = sorted[0];
     const hi = sorted[sorted.length - 1];
-    return { sorted, lo, hi, mu: mean(ds.values), med: median(ds.values), step: (hi - lo) / STOPS };
-  }, [ds]);
+    const mu = mean(ds.values);
+    // The slider sticks to the two answers and to every recorded value. Without
+    // that the mean is unreachable, and so is any cut that splits a tied block.
+    const magnets = [...new Set([...ds.values, mu, levellingSplit(ds.values, width, ds.origin)])]
+      .sort((a, b) => a - b);
+    return {
+      sorted, lo, hi, mu, magnets,
+      med: median(ds.values),
+      even: levellingSplit(ds.values, width, ds.origin),
+      step: (hi - lo) / STOPS,
+    };
+  }, [ds, width]);
 
-  // Both controls open away from the answer, so there is something to find.
-  const [pivot, setPivot] = useState(() => stats.lo + (stats.hi - stats.lo) * 0.25);
-  const [k, setK] = useState(() => Math.round(ds.values.length * 0.25));
+  const [split, setSplit] = useState(() => d.lo + (d.hi - d.lo) * 0.3);
 
-  function pickDataset(i: number) {
-    const d = datasets[i];
-    const s = [...d.values].sort((a, b) => a - b);
-    setDsIndex(i);
-    setPivot(s[0] + (s[s.length - 1] - s[0]) * 0.25);
-    setK(Math.round(d.values.length * 0.25));
+  function snap(raw: number) {
+    const tol = (d.hi - d.lo) / 200;
+    let best = raw;
+    let gap = tol;
+    for (const m of d.magnets) {
+      const e = Math.abs(m - raw);
+      if (e < gap) {
+        gap = e;
+        best = m;
+      }
+    }
+    return best;
   }
 
-  const bins = useMemo(
-    () => binValues(ds.values, ds.widths[ds.defaultWidth], ds.origin),
-    [ds],
+  function pickDataset(i: number) {
+    const ds2 = datasets[i];
+    const s = [...ds2.values].sort((a, b) => a - b);
+    setDsIndex(i);
+    setSplit(s[0] + (s[s.length - 1] - s[0]) * 0.3);
+  }
+
+  const sp = useMemo(
+    () => splitBins(ds.values, width, ds.origin, split),
+    [ds, width, split],
   );
-  // Axis ticks get the compact form, prose and statistics the precise one.
+
   const fmt = (v: number) => formatValue(ds, v);
   const stat = (v: number) => formatStat(ds, v);
 
   const n = ds.values.length;
-  const even = n % 2 === 0;
-  const beamLevel = Math.abs(stats.mu - pivot) < (stats.hi - stats.lo) * 0.0025;
-  const scalesLevel = k === n - k;
-  const belowMean = ds.values.filter((v) => v < stats.mu).length;
+  const belowMean = ds.values.filter((v) => v < d.mu).length;
+  const beamLevel = Math.abs(d.mu - split) < (d.hi - d.lo) * 1e-6;
+  const both = beamLevel && sp.level;
 
   return (
     <section className="case">
       <header className="case-head">
-        <h1>Two middles, two machines</h1>
+        <h1>Two middles, one cut</h1>
         <p>
-          The mean balances distances. The median balances counts. Each one has a
-          machine that finds it, and the machines do not agree.
+          One slider cuts the data in one place, and two machines judge the cut.
+          The beam weighs how far each value sits from it. The scales only count
+          how many fall on each side. They want the cut in different places.
         </p>
       </header>
 
@@ -57,123 +83,115 @@ export function Balance() {
         <div className="control">
           <span className="control-label">Data</span>
           <div className="segmented" role="group" aria-label="Choose a data set">
-            {datasets.map((d, i) => (
-              <button key={d.id} type="button" className={i === dsIndex ? "is-active" : ""}
+            {datasets.map((x, i) => (
+              <button key={x.id} type="button" className={i === dsIndex ? "is-active" : ""}
                       aria-pressed={i === dsIndex} onClick={() => pickDataset(i)}>
-                {d.label}
+                {x.label}
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      <p className="blurb">
-        {ds.blurb} · <strong>{n}</strong> values
-      </p>
-
-      <h2 className="panel-head">The mean: slide the pivot until it balances</h2>
-      <p className="panel-sub">
-        Every value is a weight sitting where it falls on the line. Push the pivot
-        until the beam is level.
-      </p>
-
       <div className="controls controls-tight">
         <div className="control">
-          <label className="control-label" htmlFor="pivot">Pivot</label>
+          <label className="control-label" htmlFor="split">Cut the data here</label>
           <div className="slider-row">
-            <input id="pivot" type="range" min={stats.lo} max={stats.hi} step={stats.step}
-                   value={pivot} onChange={(e) => setPivot(Number(e.target.value))} />
-            <output className="slider-value">{stat(pivot)}</output>
+            <input id="split" type="range" min={d.lo} max={d.hi} step={d.step}
+                   value={split} onChange={(e) => setSplit(snap(Number(e.target.value)))} />
+            <output className="slider-value">{stat(split)}</output>
           </div>
         </div>
         <div className="control">
           <span className="control-label">&nbsp;</span>
-          <button type="button" className="ghost" onClick={() => setPivot(stats.mu)}>
-            Let it balance
-          </button>
+          <div className="segmented" role="group" aria-label="Send the cut somewhere">
+            <button type="button" onClick={() => setSplit(d.mu)}>Balance the beam</button>
+            <button type="button" onClick={() => setSplit(d.even)}>Level the scales</button>
+          </div>
         </div>
       </div>
 
-      <BalanceBeam bins={bins} pivot={pivot} mean={stats.mu} total={n}
+      <p className="blurb">
+        {ds.blurb} · <strong>{n}</strong> values ·{" "}
+        <span className="key-below">below the cut</span>{" "}
+        <span className="key-above">above the cut</span>
+      </p>
+
+      <h2 className="panel-head">The beam weighs distance</h2>
+      <p className="panel-sub">
+        Every class is a weight standing where it falls. A value far from the
+        pivot pulls harder than one close to it.
+      </p>
+
+      <BalanceBeam bins={sp.bins} split={split} mean={d.mu} total={n}
                    format={fmt} units={ds.units} />
 
       <p className="readout" aria-live="polite">
         {beamLevel ? (
           <span>
-            Level at <strong>{stat(stats.mu)}</strong>. That is the mean. A value far
-            out on the line pulls harder than a value near the pivot, so where the
-            weights sit matters, not just how many there are.
+            Level at <strong>{stat(d.mu)}</strong>. That is the mean, and it is the
+            only cut that balances this beam.
           </span>
         ) : (
           <span className="readout-idle">
-            The pivot is at {stat(pivot)}. The beam tips because the pulls on the two
-            sides do not cancel.
+            The pivot is at {stat(split)}. The pulls on the two sides do not cancel.
           </span>
         )}
       </p>
 
-      <h2 className="panel-head">The median: slide until the pans hold the same number</h2>
+      <h2 className="panel-head">The scales weigh count</h2>
       <p className="panel-sub">
-        Now every value weighs the same, whatever it is. Choose how many of them go
-        on the left pan.
+        The same classes, carried onto two pans. Now every value weighs the same,
+        so only how many there are matters.
       </p>
 
-      <div className="controls controls-tight">
-        <div className="control">
-          <label className="control-label" htmlFor="split">On the left pan</label>
-          <div className="slider-row">
-            <input id="split" type="range" min={0} max={n} step={1}
-                   value={k} onChange={(e) => setK(Number(e.target.value))} />
-            <output className="slider-value">{k} of {n}</output>
-          </div>
-        </div>
-        <div className="control">
-          <span className="control-label">&nbsp;</span>
-          <button type="button" className="ghost" onClick={() => setK(Math.floor(n / 2))}>
-            {even ? "Split it evenly" : "Get as close as it goes"}
-          </button>
-        </div>
-      </div>
-
-      <Scales sorted={stats.sorted} k={k} format={stat} />
+      <Scales bins={sp.bins} leftPan={sp.leftPan} rightPan={sp.rightPan}
+              level={sp.level} total={n} />
 
       <p className="readout" aria-live="polite">
-        {scalesLevel ? (
+        {sp.level ? (
           <span>
-            Level: <strong>{n / 2}</strong> on each side. The divider sits between{" "}
-            <strong>{stat(stats.sorted[k - 1])}</strong> and{" "}
-            <strong>{stat(stats.sorted[k])}</strong>, and the median is the midpoint
-            of those two, <strong>{stat(stats.med)}</strong>.
+            Level: <strong>{sp.leftPan}</strong> on each side. Any cut that does this
+            is a median of the data, and the one this course reports is{" "}
+            <strong>{stat(d.med)}</strong>.
+            {sp.onEdge > 0 ? (
+              <>
+                {" "}
+                <span className="readout-idle">
+                  {sp.onEdge} {sp.onEdge === 1 ? "value sits" : "values sit"} exactly on
+                  the cut, so {sp.onEdge === 1 ? "it goes" : "they go"} to whichever side
+                  needs {sp.onEdge === 1 ? "it" : "them"}.
+                </span>
+              </>
+            ) : null}
           </span>
-        ) : !even && Math.abs(k - (n - k)) === 1 ? (
+        ) : n % 2 === 1 && Math.abs(sp.leftPan - sp.rightPan) === 1 ? (
           <span>
-            This is as close as it gets. <strong>{n}</strong> is odd, so no split puts
-            the same number on each side; one value is always left over. That value is
-            the median, <strong>{stat(stats.med)}</strong>.
+            One off, and it cannot do better. <strong>{n}</strong> is odd, so no cut
+            puts the same number on each side. The value left over is the median,{" "}
+            <strong>{stat(d.med)}</strong>.
           </span>
         ) : (
           <span className="readout-idle">
-            {k} on the left and {n - k} on the right. Move the divider until the counts
+            {sp.leftPan} below and {sp.rightPan} above. Move the cut until the counts
             match.
           </span>
         )}
       </p>
 
       <dl className="stats">
-        <div><dt>Mean</dt><dd>{stat(stats.mu)}</dd></div>
-        <div><dt>Median</dt><dd>{stat(stats.med)}</dd></div>
+        <div><dt>Mean</dt><dd>{stat(d.mu)}</dd></div>
+        <div><dt>Median</dt><dd>{stat(d.med)}</dd></div>
         <div><dt>Below the mean</dt><dd>{belowMean} of {n}</dd></div>
       </dl>
 
-      <p className="note">{ds.note}</p>
-
       <p className="note">
-        {stats.mu > stats.med
-          ? "The pivot sits to the right of the divider. A few large values pull the beam that way without moving the count, which is what a right-skewed data set does to a mean."
-          : stats.mu < stats.med
-            ? "The pivot sits to the left of the divider, so the long tail is on the low side."
-            : "The pivot and the divider land together, which is what a symmetric data set looks like."}
+        {both
+          ? "This data is even enough that one cut does both. That is what a symmetric data set looks like."
+          : "One slider, two machines, and you cannot satisfy both. Balance the beam and the pans go uneven. Level the pans and the beam tips. The gap between those two cuts is the gap between the mean and the median."}
       </p>
+
+      <p className="note">{ds.note}</p>
     </section>
   );
 }

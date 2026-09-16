@@ -12,6 +12,7 @@
   --series-1-soft: #cde2fb;
   --series-2:  #b26a15;
   --series-2-soft: #f2dcbc;
+  --ok:        #1d7a4c;
   --focus:     #2a78d6;
   color-scheme: light;
 }
@@ -29,6 +30,7 @@
     --series-1-soft: #184f95;
     --series-2:  #d8912f;
     --series-2-soft: #6a4413;
+    --ok:        #43a771;
     --focus:     #3987e5;
     color-scheme: dark;
   }
@@ -333,16 +335,30 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
   stroke-width: 5;
   stroke-linecap: round;
 }
-.beam.is-level { fill: var(--series-1); stroke: var(--series-1); }
+.beam.is-level { fill: var(--ok); stroke: var(--ok); }
 
-.load {
-  fill: var(--series-1-soft);
-  stroke: var(--series-1);
-  stroke-width: 1;
+/* The colour says which side of the cut a class is on, and it is the same
+   colour on the beam and on the pan it is carried to. */
+.load { stroke-width: 1; }
+.load.is-below { fill: var(--series-1-soft); stroke: var(--series-1); }
+.load.is-above { fill: var(--series-2-soft); stroke: var(--series-2); }
+
+.key-below, .key-above { font-size: 13px; }
+.key-below::before, .key-above::before {
+  content: "";
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 5px;
+  border: 1px solid;
+  vertical-align: baseline;
 }
+.key-below::before { background: var(--series-1-soft); border-color: var(--series-1); }
+.key-above::before { background: var(--series-2-soft); border-color: var(--series-2); }
+.key-above { margin-left: 12px; }
 
 .fulcrum { fill: var(--text-3); }
-.fulcrum.is-level { fill: var(--series-1); }
+.fulcrum.is-level { fill: var(--ok); }
 .fulcrum-base { stroke: var(--text-3); stroke-width: 2.5; stroke-linecap: round; }
 .pivot-drop { stroke: var(--text-3); stroke-width: 1; stroke-dasharray: 2 4; }
 
@@ -350,12 +366,6 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
 .beam-pin { fill: var(--text-2); }
 .chain { stroke: var(--text-3); stroke-width: 1; }
 .pan { fill: none; stroke: var(--text-2); stroke-width: 2; stroke-linecap: round; }
-.pan-load {
-  fill: var(--series-1-soft);
-  stroke: var(--series-1);
-  stroke-width: 1;
-  transition: height 280ms ease, y 280ms ease;
-}
 .pan-count {
   font: 600 19px "Helvetica Neue", Helvetica, sans-serif;
   font-variant-numeric: tabular-nums;
@@ -372,21 +382,11 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
 .scales g { transition: none; }
 .scales .post, .scales .beam, .scales .chain, .scales .pan { transition: all 280ms ease; }
 
-/* One tick per value, in rank order. Left pan and right pan get different
-   colours so the divider reads as a split of the data, not a cut on an axis. */
-.strip rect.is-left  { fill: var(--series-1-soft); stroke: var(--series-1); stroke-width: 0.5; }
-.strip rect.is-right { fill: var(--series-2-soft); stroke: var(--series-2); stroke-width: 0.5; }
-.strip .divider { stroke: var(--text-1); stroke-width: 2; }
-.strip-edge {
-  font: 600 11px "Helvetica Neue", Helvetica, sans-serif;
-  fill: var(--text-1);
-}
-
 .verdict {
   font: 600 13px "Helvetica Neue", Helvetica, sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  fill: var(--series-1);
+  fill: var(--ok);
 }
 .tilt-hint {
   font: 12px "Helvetica Neue", Helvetica, sans-serif;
@@ -394,6 +394,6 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .balance g[transform], .pan-load, .scales .post, .scales .beam,
+  .balance g[transform], .scales .post, .scales .beam,
   .scales .chain, .scales .pan { transition: none; }
 }
