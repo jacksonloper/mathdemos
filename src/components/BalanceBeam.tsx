@@ -71,34 +71,27 @@ export function BalanceBeam({ bins, split, mean, total, format, units }: Props) 
               property a weight has is its distance from the pivot, so the piece
               left of the pivot has to be drawn left of it.
 
-              The grey is the values recorded at the cut itself. It takes the
-              share of the class that those values are, sitting astride the
-              pivot, so it marks the points on the pivot rather than the whole
-              class that contains it. With whole-number data at width 1 a class
-              holds exactly one recorded value, and the grey fills it. */}
+              Values recorded at exactly the cut get no colour of their own
+              here. They have one on the scales, where standing on the pivot is
+              the whole point, but on the beam it buys nothing: a weight at the
+              pivot contributes no torque whether you mark it or not, and a
+              third colour appearing under the fulcrum reads as an event when
+              nothing has happened. */}
           {bins.map((b, i) => {
             if (b.count === 0) return null;
             const x0 = xAt(b.lo);
             const x1 = xAt(b.hi);
             const h = hAt(b.count);
             const xs = Math.min(Math.max(xAt(split), x0), x1);
-            const gw = ((x1 - x0) * b.atCut) / b.count;
-            // Astride the pivot, nudged back inside the class if it overhangs.
-            const gLo = Math.min(Math.max(xs - gw / 2, x0), x1 - gw);
-            const gHi = gLo + gw;
             return (
               <g key={i}>
-                {gLo > x0 ? (
+                {xs > x0 ? (
                   <rect className="load is-below" x={x0} y={BEAM_TOP - h}
-                        width={gLo - x0} height={h} />
+                        width={xs - x0} height={h} />
                 ) : null}
-                {gw > 0 ? (
-                  <rect className="load is-mid" x={gLo} y={BEAM_TOP - h}
-                        width={gw} height={h} />
-                ) : null}
-                {gHi < x1 ? (
-                  <rect className="load is-above" x={gHi} y={BEAM_TOP - h}
-                        width={x1 - gHi} height={h} />
+                {xs < x1 ? (
+                  <rect className="load is-above" x={xs} y={BEAM_TOP - h}
+                        width={x1 - xs} height={h} />
                 ) : null}
               </g>
             );

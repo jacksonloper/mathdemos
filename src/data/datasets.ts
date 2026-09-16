@@ -229,24 +229,12 @@ export function binValues(values: number[], width: number, origin: number): Bin[
 }
 
 /**
- * One class, counted two ways.
+ * One class, with its values dealt to the two pans and the pivot.
  *
- * `below`, `atCut` and `above` are where its values actually sit, which is what
- * the beam needs: position is the whole of the physics there, and a value
- * recorded at exactly the cut is standing on the pivot whatever the pans later
- * do with it.
- *
- * `left`, `right` and `mid` are where they end up after the pans take what they
- * need, which is what the scales draw.
+ * This is what the scales draw. The beam does not use it: there, a class is
+ * coloured by where the cut falls across it, not by where its values ended up.
  */
-export type SplitBin = Bin & {
-  below: number;
-  atCut: number;
-  above: number;
-  left: number;
-  right: number;
-  mid: number;
-};
+export type SplitBin = Bin & { left: number; right: number; mid: number };
 
 export type Split = {
   bins: SplitBin[];
@@ -292,9 +280,6 @@ export function splitBins(values: number[], width: number, origin: number, s: nu
   if (!n) return empty;
 
   const start = bins[0].lo;
-  const binBelow = new Array<number>(n).fill(0);
-  const binAt = new Array<number>(n).fill(0);
-  const binAbove = new Array<number>(n).fill(0);
   const left = new Array<number>(n).fill(0);
   const right = new Array<number>(n).fill(0);
   const mid = new Array<number>(n).fill(0);
@@ -306,15 +291,12 @@ export function splitBins(values: number[], width: number, origin: number, s: nu
   for (const v of values) {
     const i = Math.min(n - 1, Math.floor((v - start) / width));
     if (v < s) {
-      binBelow[i]++;
       left[i]++;
       below++;
     } else if (v > s) {
-      binAbove[i]++;
       right[i]++;
       above++;
     } else {
-      binAt[i]++;
       onEdge++;
       edgeBin = i;
     }
@@ -335,11 +317,7 @@ export function splitBins(values: number[], width: number, origin: number, s: nu
   const rightPan = above + toRight;
 
   return {
-    bins: bins.map((b, i) => ({
-      ...b,
-      below: binBelow[i], atCut: binAt[i], above: binAbove[i],
-      left: left[i], right: right[i], mid: mid[i],
-    })),
+    bins: bins.map((b, i) => ({ ...b, left: left[i], right: right[i], mid: mid[i] })),
     below,
     onEdge,
     above,
