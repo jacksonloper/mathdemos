@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Histogram } from "../components/Histogram";
-import { binValues, datasets } from "../data/datasets";
+import { binValues, datasets, formatValue } from "../data/datasets";
 
 export function Binning() {
   const [dsIndex, setDsIndex] = useState(0);
@@ -105,7 +105,7 @@ export function Binning() {
 
       <Histogram
         bins={bins}
-        decimals={ds.decimals}
+        format={(v) => formatValue(ds, v)}
         units={ds.units}
         total={ds.values.length}
         relative={relative}
@@ -129,7 +129,7 @@ export function Binning() {
             </span>
           </p>
           <p className="raw-values">
-            {sorted.map((v) => v.toFixed(ds.decimals)).join("  ")}
+            {sorted.map((v) => formatValue(ds, v)).join("  ")}
           </p>
         </div>
       ) : null}
@@ -148,8 +148,8 @@ export function Binning() {
           <tbody>
             {bins.map((b, i) => (
               <tr key={i}>
-                <td>{b.lo.toFixed(ds.decimals)}</td>
-                <td>{b.hi.toFixed(ds.decimals)}</td>
+                <td>{formatValue(ds, b.lo)}</td>
+                <td>{formatValue(ds, b.hi)}</td>
                 <td>{b.count}</td>
                 <td>{(b.count / ds.values.length).toFixed(3)}</td>
               </tr>

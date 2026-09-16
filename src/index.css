@@ -10,6 +10,8 @@
   --text-3:    #86847e;
   --series-1:  #2a78d6;
   --series-1-soft: #cde2fb;
+  --series-2:  #b26a15;
+  --series-2-soft: #f2dcbc;
   --focus:     #2a78d6;
   color-scheme: light;
 }
@@ -25,6 +27,8 @@
     --text-3:    #8d8b81;
     --series-1:  #3987e5;
     --series-1-soft: #184f95;
+    --series-2:  #d8912f;
+    --series-2-soft: #6a4413;
     --focus:     #3987e5;
     color-scheme: dark;
   }
@@ -172,9 +176,9 @@ button, input { font: inherit; }
 .grid { stroke: var(--line-soft); stroke-width: 1; }
 .axis { stroke: var(--line); stroke-width: 1; }
 
-/* Histogram bars TOUCH. That is the definition of a histogram and the whole
-   point of the Module 2 page, so the usual 2px gap between adjacent bars is
-   deliberately not used. A hairline surface-coloured stroke separates them. */
+/* Histogram bars TOUCH. That is the definition of a histogram, so the usual 2px
+   gap between adjacent bars is deliberately not used. A hairline
+   surface-coloured stroke separates them. */
 .bar {
   fill: var(--series-1-soft);
   stroke: var(--series-1);
@@ -295,4 +299,101 @@ button, input { font: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   .bar { transition: fill 120ms ease; }
+}
+
+/* ---- balance beam and scales ---- */
+
+/* Two sub-figures on one page, each with its own slider, so they get a heading
+   rather than sitting under the page's one <h1>. */
+.panel-head {
+  margin: 34px 0 4px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.panel-sub { margin: 0; max-width: 58ch; color: var(--text-2); font-size: 14px; }
+.controls-tight { margin: 14px 0 6px; padding-bottom: 14px; }
+
+button.ghost {
+  padding: 6px 13px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-1);
+  color: var(--text-2);
+  cursor: pointer;
+}
+button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
+
+/* The beam and its load rotate together about the fulcrum, so the transition is
+   on the transform rather than on each bar. */
+.balance g[transform] { transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+.beam {
+  fill: var(--text-2);
+  stroke: var(--text-2);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+.beam.is-level { fill: var(--series-1); stroke: var(--series-1); }
+
+.load {
+  fill: var(--series-1-soft);
+  stroke: var(--series-1);
+  stroke-width: 1;
+}
+
+.fulcrum { fill: var(--text-3); }
+.fulcrum.is-level { fill: var(--series-1); }
+.fulcrum-base { stroke: var(--text-3); stroke-width: 2.5; stroke-linecap: round; }
+.pivot-drop { stroke: var(--text-3); stroke-width: 1; stroke-dasharray: 2 4; }
+
+.post { stroke: var(--text-3); stroke-width: 4; stroke-linecap: round; }
+.beam-pin { fill: var(--text-2); }
+.chain { stroke: var(--text-3); stroke-width: 1; }
+.pan { fill: none; stroke: var(--text-2); stroke-width: 2; stroke-linecap: round; }
+.pan-load {
+  fill: var(--series-1-soft);
+  stroke: var(--series-1);
+  stroke-width: 1;
+  transition: height 280ms ease, y 280ms ease;
+}
+.pan-count {
+  font: 600 19px "Helvetica Neue", Helvetica, sans-serif;
+  font-variant-numeric: tabular-nums;
+  fill: var(--text-1);
+}
+.pan-label {
+  font: 10px "Helvetica Neue", Helvetica, sans-serif;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  fill: var(--text-3);
+}
+
+.scales line.beam { fill: none; }
+.scales g { transition: none; }
+.scales .post, .scales .beam, .scales .chain, .scales .pan { transition: all 280ms ease; }
+
+/* One tick per value, in rank order. Left pan and right pan get different
+   colours so the divider reads as a split of the data, not a cut on an axis. */
+.strip rect.is-left  { fill: var(--series-1-soft); stroke: var(--series-1); stroke-width: 0.5; }
+.strip rect.is-right { fill: var(--series-2-soft); stroke: var(--series-2); stroke-width: 0.5; }
+.strip .divider { stroke: var(--text-1); stroke-width: 2; }
+.strip-edge {
+  font: 600 11px "Helvetica Neue", Helvetica, sans-serif;
+  fill: var(--text-1);
+}
+
+.verdict {
+  font: 600 13px "Helvetica Neue", Helvetica, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  fill: var(--series-1);
+}
+.tilt-hint {
+  font: 12px "Helvetica Neue", Helvetica, sans-serif;
+  fill: var(--text-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .balance g[transform], .pan-load, .scales .post, .scales .beam,
+  .scales .chain, .scales .pan { transition: none; }
 }

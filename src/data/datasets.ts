@@ -17,6 +17,8 @@ export type Dataset = {
   origin: number;
   /** Decimal places to show on axis labels. */
   decimals: number;
+  /** Money, so values are written $750 and $1M rather than 750 and 1000000. */
+  currency?: boolean;
   /** A line about this data, shown under the chart. */
   note: string;
 };
@@ -123,6 +125,25 @@ export const datasets: Dataset[] = [
       "Width 10 is what a stem-and-leaf plot of these values shows. Width 5 is the split-stem version of the same plot.",
   },
   {
+    id: "briefcases",
+    label: "Deal or No Deal",
+    blurb: "26 briefcase prizes",
+    units: "dollars",
+    unit: "dollar",
+    currency: true,
+    values: [
+      0.01, 1, 5, 10, 25, 50, 75, 100, 200, 300, 400, 500, 750,
+      1000, 5000, 10000, 25000, 50000, 75000, 100000,
+      200000, 300000, 400000, 500000, 750000, 1000000,
+    ],
+    widths: [50000, 100000, 250000, 500000],
+    defaultWidth: 1,
+    origin: 0,
+    decimals: 2,
+    note:
+      "Nineteen of the twenty-six cases hold under $100,000 and one holds a million. The mean prize is about $131,478 and the median is $875, so twenty of the twenty-six cases are worth less than average.",
+  },
+  {
     id: "cavities",
     label: "Cavities",
     blurb: "25 students",
@@ -140,6 +161,52 @@ export const datasets: Dataset[] = [
       "Width 1 is a dot plot: one class per whole number. Widen it and the long right tail collapses into a single bar.",
   },
 ];
+
+/** Drop trailing zeros: 1.5 stays 1.5, 2.0 becomes 2. */
+const trim = (x: number) => String(Math.round(x * 100) / 100);
+
+/**
+ * How a value is written on an axis, in a table, or in a readout.
+ *
+ * Money gets its own form because the briefcase data spans eight orders of
+ * magnitude. Written out, its axis reads 0.00, 100000.00, 200000.00 and the
+ * labels collide; written compactly it reads $0, $100k, $200k.
+ */
+export function formatValue(ds: Dataset, v: number): string {
+  if (!ds.currency) return v.toFixed(ds.decimals);
+  const a = Math.abs(v);
+  if (a > 0 && a < 1) return `$${v.toFixed(2)}`;
+  if (a >= 1e6) return `$${trim(v / 1e6)}M`;
+  if (a >= 1e3) return `$${trim(v / 1e3)}k`;
+  return `$${trim(v)}`;
+}
+
+/**
+ * A computed statistic, which needs more precision than an axis label. A mean
+ * of 4.08 cavities must not print as "4", and a mean prize of $131,477.54 must
+ * not print as "$131.48k".
+ */
+export function formatStat(ds: Dataset, v: number): string {
+  if (ds.currency) {
+    const cents = Math.abs(v - Math.round(v)) > 1e-9;
+    return `$${v.toLocaleString("en-US", {
+      minimumFractionDigits: cents ? 2 : 0,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+  return v.toFixed(Math.max(ds.decimals, 1));
+}
+
+export function mean(values: number[]): number {
+  return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+/** Sorts a copy, so the caller's array keeps its order. */
+export function median(values: number[]): number {
+  const s = [...values].sort((a, b) => a - b);
+  const mid = s.length >> 1;
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
 
 export type Bin = { lo: number; hi: number; count: number };
 
