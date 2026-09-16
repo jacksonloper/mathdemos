@@ -86,6 +86,9 @@ export function Scales({ bins, leftPan, rightPan, middle, level, total }: Props)
     <figure className="chart scales">
       <svg viewBox={`0 0 ${W} ${H}`} role="img"
            aria-label={`A balance holding ${leftPan} values on the left pan and ${rightPan} on the right`}>
+        <text className="fig-label" x={46} y={18}>
+          The scales weigh count
+        </text>
         <line className="post" x1={POST_X} x2={POST_X} y1={BEAM_Y} y2={BASE_Y} />
         <line className="fulcrum-base" x1={POST_X - 34} x2={POST_X + 34} y1={BASE_Y} y2={BASE_Y} />
 

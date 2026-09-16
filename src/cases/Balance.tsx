@@ -118,12 +118,6 @@ export function Balance() {
         <span className="key-above">above the cut</span>
       </p>
 
-      <h2 className="panel-head">The beam weighs distance</h2>
-      <p className="panel-sub">
-        Every class is a weight standing where it falls. A value far from the
-        pivot pulls harder than one close to it.
-      </p>
-
       <BalanceBeam bins={sp.bins} split={split} mean={d.mu} total={n}
                    format={fmt} units={ds.units} />
 
@@ -138,14 +132,6 @@ export function Balance() {
             The pivot is at {stat(split)}. The pulls on the two sides do not cancel.
           </span>
         )}
-      </p>
-
-      <h2 className="panel-head">The scales weigh count</h2>
-      <p className="panel-sub">
-        The same classes, carried onto two pans. Now every value weighs the same,
-        so only how many there are matters. A value sitting exactly on the cut
-        stands on the pivot, in neither pan, and steps off only if the pans need
-        it.
       </p>
 
       <Scales bins={sp.bins} leftPan={sp.leftPan} rightPan={sp.rightPan}
@@ -175,6 +161,20 @@ export function Balance() {
         )}
       </p>
 
+      <div className="panel-notes">
+        <p>
+          <strong>The beam weighs distance.</strong> Every class is a weight
+          standing where it falls. A value far from the pivot pulls harder than
+          one close to it.
+        </p>
+        <p>
+          <strong>The scales weigh count.</strong> The same classes, carried onto
+          two pans. Now every value weighs the same, so only how many there are
+          matters. A value sitting exactly on the cut stands on the pivot, in
+          neither pan, and steps off only if the pans need it.
+        </p>
+      </div>
+
       <dl className="stats">
         <div><dt>Mean</dt><dd>{stat(d.mu)}</dd></div>
         <div><dt>Median</dt><dd>{stat(d.med)}</dd></div>
@@ -186,8 +186,6 @@ export function Balance() {
           ? "This data is even enough that one cut does both. That is what a symmetric data set looks like."
           : "One slider, two machines, and you cannot satisfy both. Balance the beam and the pans go uneven. Level the pans and the beam tips. The gap between those two cuts is the gap between the mean and the median."}
       </p>
-
-      <p className="note">{ds.note}</p>
     </section>
   );
 }

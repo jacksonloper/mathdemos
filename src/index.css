@@ -305,14 +305,23 @@ button, input { font: inherit; }
 
 /* ---- balance beam and scales ---- */
 
-/* Two sub-figures on one page, each with its own slider, so they get a heading
-   rather than sitting under the page's one <h1>. */
-.panel-head {
-  margin: 34px 0 4px;
-  font-size: 17px;
-  font-weight: 600;
+/* One slider drives both machines, so the two pictures have to be close enough
+   together to watch at once. Nothing but a live readout goes between them: each
+   figure names itself inside its own SVG, and the prose explaining the pair
+   sits below both. */
+.fig-label {
+  font: 600 11px "Helvetica Neue", Helvetica, sans-serif;
+  letter-spacing: 0.04em;
+  fill: var(--text-2);
 }
-.panel-sub { margin: 0; max-width: 58ch; color: var(--text-2); font-size: 14px; }
+.panel-notes { margin-top: 22px; }
+.panel-notes p {
+  margin: 0 0 9px;
+  max-width: 62ch;
+  color: var(--text-2);
+  font-size: 14px;
+}
+.balance, .scales { margin-top: 20px; }
 .controls-tight { margin: 14px 0 6px; padding-bottom: 14px; }
 
 button.ghost {

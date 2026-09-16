@@ -110,6 +110,12 @@ export function BalanceBeam({ bins, split, mean, total, format, units }: Props) 
         <text className="axis-title" x={PAD.left + plotW} y={H - 6} textAnchor="end">
           {units}
         </text>
+        {/* The figure names itself, so the prose explaining both machines can
+            sit below them both and the two pictures stay close enough together
+            to watch at once. Inside the viewBox this costs no page height. */}
+        <text className="fig-label" x={PAD.left} y={18}>
+          The beam weighs distance
+        </text>
 
         {/* Kept clear of both edges: the pivot can sit hard against either one. */}
         {level ? (
