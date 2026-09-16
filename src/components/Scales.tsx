@@ -1,4 +1,4 @@
-import type { SplitBin } from "../data/datasets";
+import { formatCount, type SplitBin } from "../data/datasets";
 
 type Props = {
   /** The same classes the beam is carrying, already dealt to the two sides. */
@@ -68,10 +68,10 @@ export function Scales({ bins, leftPan, rightPan, level, total }: Props) {
         <path className="pan"
               d={`M ${end.x - PAN_HALF} ${top} Q ${end.x} ${top + 18} ${end.x + PAN_HALF} ${top}`} />
         <text className="pan-count" x={end.x} y={top + 40} textAnchor="middle">
-          {count}
+          {formatCount(count)}
         </text>
         <text className="pan-label" x={end.x} y={top + 55} textAnchor="middle">
-          {side === "left" ? "below the split" : "above the split"}
+          {side === "left" ? "below the cut" : "above the cut"}
         </text>
       </g>
     );
@@ -98,8 +98,8 @@ export function Scales({ bins, leftPan, rightPan, level, total }: Props) {
         ) : (
           <text className="tilt-hint" x={POST_X} y={30} textAnchor="middle">
             {rightPan > leftPan
-              ? `${rightPan - leftPan} more above the split`
-              : `${leftPan - rightPan} more below the split`}
+              ? `${formatCount(rightPan - leftPan)} more above the cut`
+              : `${formatCount(leftPan - rightPan)} more below the cut`}
           </text>
         )}
       </svg>

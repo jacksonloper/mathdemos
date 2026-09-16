@@ -246,14 +246,18 @@ export type Split = {
 /**
  * Cut the data at `s` and report what lands on each side.
  *
- * Values exactly equal to `s` are the interesting case. Heights are measured to
- * the nearest inch, so 33 people are recorded as exactly 68 inches; the cut
- * runs through them. They are dealt to whichever side needs them, which is what
- * makes 165 against 165 reachable at all. Without that, no cut of this data
- * splits it in half, because the tied block is wider than the gap.
+ * Values exactly equal to `s` are the interesting case, because the cut runs
+ * through them and the median does not pick a side for them. They are dealt
+ * out to make the two halves equal, and the deal may be fractional: a value
+ * sitting exactly on the cut can go half to each pan.
  *
- * This is not a fudge: any `s` with neither side holding more than half is a
- * median of the data, and dealing the ties is what that definition means.
+ * That is what makes an odd count work. Twenty-five cavities cannot be split
+ * 12 and 13, but they split 12.5 and 12.5 once the value on the cut is allowed
+ * to be halved, and that value is the median. The same dealing is what lets
+ * heights balance at all: 33 people are recorded as exactly 68 inches, and
+ * without splitting the tied block no cut of that data lands on 165 a side.
+ *
+ * The pans come level exactly when `s` is a median of the data.
  */
 export function splitBins(values: number[], width: number, origin: number, s: number): Split {
   const bins = binValues(values, width, origin);
@@ -283,7 +287,8 @@ export function splitBins(values: number[], width: number, origin: number, s: nu
     }
   }
 
-  const a = Math.max(0, Math.min(onEdge, Math.round((above - below + onEdge) / 2)));
+  // Take exactly half if the values on the cut can cover the difference.
+  const a = Math.max(0, Math.min(onEdge, values.length / 2 - below));
   if (edgeBin >= 0) {
     left[edgeBin] += a;
     right[edgeBin] += onEdge - a;
@@ -302,10 +307,7 @@ export function splitBins(values: number[], width: number, origin: number, s: nu
   };
 }
 
-/**
- * The split closest to the median that actually levels the pans, or when none
- * does (an odd count), the one that comes closest.
- */
+/** The split closest to the median that levels the pans. */
 export function levellingSplit(values: number[], width: number, origin: number): number {
   const distinct = [...new Set(values)].sort((a, b) => a - b);
   const cands = [...distinct];
@@ -322,4 +324,9 @@ export function levellingSplit(values: number[], width: number, origin: number):
     }
   }
   return best;
+}
+
+/** A pan count, which is a half when the cut runs through a value. */
+export function formatCount(c: number): string {
+  return Number.isInteger(c) ? String(c) : c.toFixed(1);
 }

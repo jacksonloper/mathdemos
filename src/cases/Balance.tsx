@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { BalanceBeam } from "../components/BalanceBeam";
 import { Scales } from "../components/Scales";
 import {
-  datasets, formatStat, formatValue, levellingSplit, mean, median, splitBins,
+  datasets, formatCount, formatStat, formatValue, levellingSplit, mean, median,
+  splitBins,
 } from "../data/datasets";
 
 /** Stops on the split slider. Fine enough to feel continuous. */
@@ -151,30 +152,25 @@ export function Balance() {
       <p className="readout" aria-live="polite">
         {sp.level ? (
           <span>
-            Level: <strong>{sp.leftPan}</strong> on each side. Any cut that does this
-            is a median of the data, and the one this course reports is{" "}
-            <strong>{stat(d.med)}</strong>.
+            Level: <strong>{formatCount(sp.leftPan)}</strong> on each side.{" "}
             {sp.onEdge > 0 ? (
               <>
-                {" "}
-                <span className="readout-idle">
-                  {sp.onEdge} {sp.onEdge === 1 ? "value sits" : "values sit"} exactly on
-                  the cut, so {sp.onEdge === 1 ? "it goes" : "they go"} to whichever side
-                  needs {sp.onEdge === 1 ? "it" : "them"}.
-                </span>
+                {sp.onEdge} {sp.onEdge === 1 ? "value sits" : "values sit"} exactly on
+                the cut. The median does not hand{" "}
+                {sp.onEdge === 1 ? "it" : "them"} to a side, it marks where the halves
+                meet
+                {Number.isInteger(sp.leftPan)
+                  ? ""
+                  : ", so the value that has to be divided is divided"}
+                .{" "}
               </>
             ) : null}
-          </span>
-        ) : n % 2 === 1 && Math.abs(sp.leftPan - sp.rightPan) === 1 ? (
-          <span>
-            One off, and it cannot do better. <strong>{n}</strong> is odd, so no cut
-            puts the same number on each side. The value left over is the median,{" "}
-            <strong>{stat(d.med)}</strong>.
+            The median is <strong>{stat(d.med)}</strong>.
           </span>
         ) : (
           <span className="readout-idle">
-            {sp.leftPan} below and {sp.rightPan} above. Move the cut until the counts
-            match.
+            {formatCount(sp.leftPan)} below and {formatCount(sp.rightPan)} above. Move
+            the cut until the counts match.
           </span>
         )}
       </p>
