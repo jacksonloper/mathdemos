@@ -14,6 +14,13 @@ export function Balance() {
   // The narrowest width this data offers, so the classes are fine enough to
   // hop one at a time rather than in great slabs.
   const width = ds.widths[0];
+  // Class edges land on half values, so no recorded value ever sits on one.
+  // Every value is then at the centre of its class rather than at its edge,
+  // which is what lets a class recorded at exactly the cut sit astride the
+  // pivot instead of entirely to one side of it. With whole-number data at
+  // width 1 it also makes a class hold exactly one recorded value, so "the
+  // class at the pivot" and "the values on the pivot" become the same thing.
+  const origin = ds.origin - width / 2;
 
   const d = useMemo(() => {
     const sorted = [...ds.values].sort((a, b) => a - b);
@@ -22,15 +29,15 @@ export function Balance() {
     const mu = mean(ds.values);
     // The slider sticks to the two answers and to every recorded value. Without
     // that the mean is unreachable, and so is any cut that splits a tied block.
-    const magnets = [...new Set([...ds.values, mu, levellingSplit(ds.values, width, ds.origin)])]
+    const magnets = [...new Set([...ds.values, mu, levellingSplit(ds.values, width, origin)])]
       .sort((a, b) => a - b);
     return {
       sorted, lo, hi, mu, magnets,
       med: median(ds.values),
-      even: levellingSplit(ds.values, width, ds.origin),
+      even: levellingSplit(ds.values, width, origin),
       step: (hi - lo) / STOPS,
     };
-  }, [ds, width]);
+  }, [ds, width, origin]);
 
   const [split, setSplit] = useState(() => d.lo + (d.hi - d.lo) * 0.3);
 
@@ -56,8 +63,8 @@ export function Balance() {
   }
 
   const sp = useMemo(
-    () => splitBins(ds.values, width, ds.origin, split),
-    [ds, width, split],
+    () => splitBins(ds.values, width, origin, split),
+    [ds, width, origin, split],
   );
 
   const fmt = (v: number) => formatValue(ds, v);
