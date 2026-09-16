@@ -1,10 +1,12 @@
-import { formatCount, type SplitBin } from "../data/datasets";
+import type { SplitBin } from "../data/datasets";
 
 type Props = {
   /** The same classes the beam is carrying, already dealt to the two sides. */
   bins: SplitBin[];
   leftPan: number;
   rightPan: number;
+  /** Still standing on the pivot, belonging to neither pan. */
+  middle: number;
   level: boolean;
   total: number;
 };
@@ -21,11 +23,13 @@ const BASE_Y = 300;
 const PAN_BAR_MAX = 64;
 const CHAIN = 78;
 const PAN_HALF = 118;
+/** Where a value that sits exactly on the cut stands: on the pivot itself. */
+const SHELF_Y = 214;
 
 /** As with the beam, the tilt is capped so the load stays readable. */
 const MAX_TILT = 13;
 
-export function Scales({ bins, leftPan, rightPan, level, total }: Props) {
+export function Scales({ bins, leftPan, rightPan, middle, level, total }: Props) {
   // Counts alone decide this. A briefcase holding a million dollars weighs
   // exactly what a briefcase holding a penny weighs, which is the whole
   // difference between this machine and the beam.
@@ -41,6 +45,7 @@ export function Scales({ bins, leftPan, rightPan, level, total }: Props) {
 
   const lefts = bins.filter((b) => b.left > 0);
   const rights = bins.filter((b) => b.right > 0);
+  const mids = bins.filter((b) => b.mid > 0);
 
   /**
    * The same bars, carried over. They keep their order and their width, and
@@ -68,7 +73,7 @@ export function Scales({ bins, leftPan, rightPan, level, total }: Props) {
         <path className="pan"
               d={`M ${end.x - PAN_HALF} ${top} Q ${end.x} ${top + 18} ${end.x + PAN_HALF} ${top}`} />
         <text className="pan-count" x={end.x} y={top + 40} textAnchor="middle">
-          {formatCount(count)}
+          {count}
         </text>
         <text className="pan-label" x={end.x} y={top + 55} textAnchor="middle">
           {side === "left" ? "below the cut" : "above the cut"}
@@ -91,6 +96,28 @@ export function Scales({ bins, leftPan, rightPan, level, total }: Props) {
         {pan(endL, lefts, "left", leftPan)}
         {pan(endR, rights, "right", rightPan)}
 
+        {/* The extra spot. A value sitting exactly on the cut stands here,
+            on the pivot itself, where it weighs on neither side. */}
+        {middle > 0 ? (
+          <g>
+            <line className="pivot-shelf" x1={POST_X - 30} x2={POST_X + 30}
+                  y1={SHELF_Y} y2={SHELF_Y} />
+            {mids.map((b) => (
+              <rect key={`${b.lo}`} className="load is-mid"
+                    x={POST_X - bw / 2} y={SHELF_Y - hAt(b.mid)} width={bw} height={hAt(b.mid)} />
+            ))}
+            {/* The column runs behind this text, so it is masked out. */}
+            <rect className="label-mask" x={POST_X - 36} y={SHELF_Y + 7}
+                  width={72} height={36} />
+            <text className="pan-count is-mid" x={POST_X} y={SHELF_Y + 24} textAnchor="middle">
+              {middle}
+            </text>
+            <text className="pan-label" x={POST_X} y={SHELF_Y + 39} textAnchor="middle">
+              on the pivot
+            </text>
+          </g>
+        ) : null}
+
         {level ? (
           <text className="verdict" x={POST_X} y={30} textAnchor="middle">
             Level
@@ -98,8 +125,8 @@ export function Scales({ bins, leftPan, rightPan, level, total }: Props) {
         ) : (
           <text className="tilt-hint" x={POST_X} y={30} textAnchor="middle">
             {rightPan > leftPan
-              ? `${formatCount(rightPan - leftPan)} more above the cut`
-              : `${formatCount(leftPan - rightPan)} more below the cut`}
+              ? `${rightPan - leftPan} more above the cut`
+              : `${leftPan - rightPan} more below the cut`}
           </text>
         )}
       </svg>

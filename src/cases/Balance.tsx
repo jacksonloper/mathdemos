@@ -2,8 +2,7 @@ import { useMemo, useState } from "react";
 import { BalanceBeam } from "../components/BalanceBeam";
 import { Scales } from "../components/Scales";
 import {
-  datasets, formatCount, formatStat, formatValue, levellingSplit, mean, median,
-  splitBins,
+  datasets, formatStat, formatValue, levellingSplit, mean, median, splitBins,
 } from "../data/datasets";
 
 /** Stops on the split slider. Fine enough to feel continuous. */
@@ -115,6 +114,7 @@ export function Balance() {
       <p className="blurb">
         {ds.blurb} · <strong>{n}</strong> values ·{" "}
         <span className="key-below">below the cut</span>{" "}
+        <span className="key-mid">on the pivot</span>{" "}
         <span className="key-above">above the cut</span>
       </p>
 
@@ -143,34 +143,34 @@ export function Balance() {
       <h2 className="panel-head">The scales weigh count</h2>
       <p className="panel-sub">
         The same classes, carried onto two pans. Now every value weighs the same,
-        so only how many there are matters.
+        so only how many there are matters. A value sitting exactly on the cut
+        stands on the pivot, in neither pan, and steps off only if the pans need
+        it.
       </p>
 
       <Scales bins={sp.bins} leftPan={sp.leftPan} rightPan={sp.rightPan}
-              level={sp.level} total={n} />
+              middle={sp.middle} level={sp.level} total={n} />
 
       <p className="readout" aria-live="polite">
         {sp.level ? (
           <span>
-            Level: <strong>{formatCount(sp.leftPan)}</strong> on each side.{" "}
-            {sp.onEdge > 0 ? (
+            Level: <strong>{sp.leftPan}</strong> on each side.{" "}
+            {sp.middle > 0 ? (
               <>
-                {sp.onEdge} {sp.onEdge === 1 ? "value sits" : "values sit"} exactly on
-                the cut. The median does not hand{" "}
-                {sp.onEdge === 1 ? "it" : "them"} to a side, it marks where the halves
-                meet
-                {Number.isInteger(sp.leftPan)
-                  ? ""
-                  : ", so the value that has to be divided is divided"}
-                .{" "}
+                <strong>{sp.middle}</strong>{" "}
+                {sp.middle === 1 ? "value is" : "values are"} still standing on the
+                pivot, weighing on neither side.{" "}
+                {sp.middle === 1
+                  ? "That one value is the median."
+                  : "Every cut through them levels the pans, so the median is a run of values rather than one, and the convention names the middle of it."}{" "}
               </>
             ) : null}
             The median is <strong>{stat(d.med)}</strong>.
           </span>
         ) : (
           <span className="readout-idle">
-            {formatCount(sp.leftPan)} below and {formatCount(sp.rightPan)} above. Move
-            the cut until the counts match.
+            {sp.leftPan} below and {sp.rightPan} above. Move the cut until the counts
+            match.
           </span>
         )}
       </p>

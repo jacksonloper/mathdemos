@@ -228,46 +228,56 @@ export function binValues(values: number[], width: number, origin: number): Bin[
   return bins;
 }
 
-/** One class, with its values dealt to the two sides of a split. */
-export type SplitBin = Bin & { left: number; right: number };
+/** One class, with its values dealt to the two sides of a cut and the pivot. */
+export type SplitBin = Bin & { left: number; right: number; mid: number };
 
 export type Split = {
   bins: SplitBin[];
-  /** Strictly below the split, exactly on it, strictly above. */
+  /** Strictly below the cut, exactly on it, strictly above. */
   below: number;
   onEdge: number;
   above: number;
-  /** What each pan ends up holding once the tied values are dealt out. */
+  /** What each pan holds, and what is still standing on the pivot. */
   leftPan: number;
   rightPan: number;
+  middle: number;
   level: boolean;
 };
 
 /**
- * Cut the data at `s` and report what lands on each side.
+ * Cut the data at `s` and report what lands where.
  *
- * Values exactly equal to `s` are the interesting case, because the cut runs
- * through them and the median does not pick a side for them. They are dealt
- * out to make the two halves equal, and the deal may be fractional: a value
- * sitting exactly on the cut can go half to each pan.
+ * A value sitting exactly on the cut goes in neither pan. It stands on the
+ * pivot, which is the honest place for it: on the beam it has no moment arm,
+ * and in the sum of distances that the median minimises it contributes zero.
+ * It costs nothing to move, so it belongs to neither side until something
+ * asks it to pick one.
  *
- * That is what makes an odd count work. Twenty-five cavities cannot be split
- * 12 and 13, but they split 12.5 and 12.5 once the value on the cut is allowed
- * to be halved, and that value is the median. The same dealing is what lets
- * heights balance at all: 33 people are recorded as exactly 68 inches, and
- * without splitting the tied block no cut of that data lands on 165 a side.
+ * When the pans are uneven, that is exactly what happens: as many of the
+ * values on the pivot as are needed step off onto the lighter pan, and the
+ * rest stay put. Nothing is split and nothing is invented. A value only moves
+ * when moving it closes the gap.
  *
- * The pans come level exactly when `s` is a median of the data.
+ * The consequences fall out rather than being arranged. The pans come level
+ * exactly when `s` is a median. With an odd count and no ties, one value is
+ * left standing on the pivot with 12 a side, and that value is the median.
+ * With heights, where 33 people are recorded at exactly 68 inches, 21 of them
+ * step right to even 159 against 159 and 12 stay on the pivot: a whole run of
+ * cuts is a median, which is why the convention has to name one.
  */
 export function splitBins(values: number[], width: number, origin: number, s: number): Split {
   const bins = binValues(values, width, origin);
   const n = bins.length;
-  const empty = { bins: [], below: 0, onEdge: 0, above: 0, leftPan: 0, rightPan: 0, level: true };
+  const empty = {
+    bins: [], below: 0, onEdge: 0, above: 0,
+    leftPan: 0, rightPan: 0, middle: 0, level: true,
+  };
   if (!n) return empty;
 
   const start = bins[0].lo;
   const left = new Array<number>(n).fill(0);
   const right = new Array<number>(n).fill(0);
+  const mid = new Array<number>(n).fill(0);
   let below = 0;
   let onEdge = 0;
   let above = 0;
@@ -287,22 +297,28 @@ export function splitBins(values: number[], width: number, origin: number, s: nu
     }
   }
 
-  // Take exactly half if the values on the cut can cover the difference.
-  const a = Math.max(0, Math.min(onEdge, values.length / 2 - below));
+  // Only as many as are needed step off the pivot, and only onto the lighter
+  // pan. The rest stay standing on it.
+  const diff = above - below;
+  const move = Math.min(onEdge, Math.abs(diff));
+  const toLeft = diff > 0 ? move : 0;
+  const toRight = diff < 0 ? move : 0;
   if (edgeBin >= 0) {
-    left[edgeBin] += a;
-    right[edgeBin] += onEdge - a;
+    left[edgeBin] += toLeft;
+    right[edgeBin] += toRight;
+    mid[edgeBin] += onEdge - move;
   }
-  const leftPan = below + a;
-  const rightPan = above + (onEdge - a);
+  const leftPan = below + toLeft;
+  const rightPan = above + toRight;
 
   return {
-    bins: bins.map((b, i) => ({ ...b, left: left[i], right: right[i] })),
+    bins: bins.map((b, i) => ({ ...b, left: left[i], right: right[i], mid: mid[i] })),
     below,
     onEdge,
     above,
     leftPan,
     rightPan,
+    middle: onEdge - move,
     level: leftPan === rightPan,
   };
 }
@@ -324,9 +340,4 @@ export function levellingSplit(values: number[], width: number, origin: number):
     }
   }
   return best;
-}
-
-/** A pan count, which is a half when the cut runs through a value. */
-export function formatCount(c: number): string {
-  return Number.isInteger(c) ? String(c) : c.toFixed(1);
 }

@@ -342,9 +342,13 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
 .load { stroke-width: 1; }
 .load.is-below { fill: var(--series-1-soft); stroke: var(--series-1); }
 .load.is-above { fill: var(--series-2-soft); stroke: var(--series-2); }
+/* Neither side. A value sitting exactly on the cut has no moment arm on the
+   beam and costs nothing in the sum the median minimises, so it is drawn in
+   its own neutral colour, standing on the pivot. */
+.load.is-mid { fill: var(--line); stroke: var(--text-3); }
 
-.key-below, .key-above { font-size: 13px; }
-.key-below::before, .key-above::before {
+.key-below, .key-above, .key-mid { font-size: 13px; }
+.key-below::before, .key-above::before, .key-mid::before {
   content: "";
   display: inline-block;
   width: 9px;
@@ -355,7 +359,8 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
 }
 .key-below::before { background: var(--series-1-soft); border-color: var(--series-1); }
 .key-above::before { background: var(--series-2-soft); border-color: var(--series-2); }
-.key-above { margin-left: 12px; }
+.key-mid::before { background: var(--line); border-color: var(--text-3); }
+.key-above, .key-mid { margin-left: 12px; }
 
 .fulcrum { fill: var(--text-3); }
 .fulcrum.is-level { fill: var(--ok); }
@@ -371,6 +376,9 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
   font-variant-numeric: tabular-nums;
   fill: var(--text-1);
 }
+.pan-count.is-mid { font-size: 15px; fill: var(--text-2); }
+.pivot-shelf { stroke: var(--text-3); stroke-width: 2; stroke-linecap: round; }
+.label-mask { fill: var(--surface-0); }
 .pan-label {
   font: 10px "Helvetica Neue", Helvetica, sans-serif;
   letter-spacing: 0.07em;

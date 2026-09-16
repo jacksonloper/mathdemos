@@ -38,7 +38,9 @@ export function BalanceBeam({ bins, split, mean, total, format, units }: Props) 
 
   // Torque about the fulcrum is the sum of (value - split) over every
   // observation, which is n * (mean - split). So the beam is level exactly at
-  // the mean, and nowhere else. tanh saturates smoothly instead of clipping.
+  // the mean, and nowhere else. A value sitting on the pivot contributes zero,
+  // which is why it is drawn there rather than on a side. tanh saturates
+  // smoothly instead of clipping.
   const off = (mean - split) / ((hi - lo) / 2);
   const tilt = MAX_TILT * Math.tanh(2.6 * off);
   const level = Math.abs(mean - split) < (hi - lo) * 1e-6;
@@ -59,26 +61,28 @@ export function BalanceBeam({ bins, split, mean, total, format, units }: Props) 
       <svg viewBox={`0 0 ${W} ${H}`} role="img"
            aria-label={`A beam loaded with ${total} values, resting on a pivot at ${format(split)}`}>
         <g transform={`rotate(${tilt} ${fx} ${fy})`}>
-          {/* Each class is stacked: the part of it below the cut, then the part
-              above. Most classes are wholly one colour and read as a plain bar.
-              The one the pivot stands inside is split by COUNT, not by where
-              the pivot line falls across its width, so the colours here match
-              the bars the pans receive. Cutting it by position instead would
-              paint a class almost entirely one colour while most of its values
-              went to the other pan. */}
+          {/* Each class is stacked by COUNT: the part below the cut, the part
+              standing on the pivot, the part above. Most classes are wholly one
+              colour and read as a plain bar. Splitting by count rather than by
+              where the pivot line crosses the class keeps these colours equal
+              to the bars the pans and the pivot receive. */}
           {bins.map((b, i) => {
             if (b.count === 0) return null;
             const x0 = xAt(b.lo);
             const w = xAt(b.hi) - x0;
             const hb = hAt(b.left);
+            const hm = hAt(b.mid);
             const ha = hAt(b.right);
             return (
               <g key={i}>
                 {b.left > 0 ? (
                   <rect className="load is-below" x={x0} y={BEAM_TOP - hb} width={w} height={hb} />
                 ) : null}
+                {b.mid > 0 ? (
+                  <rect className="load is-mid" x={x0} y={BEAM_TOP - hb - hm} width={w} height={hm} />
+                ) : null}
                 {b.right > 0 ? (
-                  <rect className="load is-above" x={x0} y={BEAM_TOP - hb - ha} width={w} height={ha} />
+                  <rect className="load is-above" x={x0} y={BEAM_TOP - hb - hm - ha} width={w} height={ha} />
                 ) : null}
               </g>
             );
