@@ -174,6 +174,8 @@ const trim = (x: number) => String(Math.round(x * 100) / 100);
  */
 export function formatValue(ds: Dataset, v: number): string {
   if (!ds.currency) return v.toFixed(ds.decimals);
+  // A boxplot axis can reach a fence below zero. Written −$100k, not $-100k.
+  if (v < 0) return `−${formatValue(ds, -v)}`;
   const a = Math.abs(v);
   if (a > 0 && a < 1) return `$${v.toFixed(2)}`;
   if (a >= 1e6) return `$${trim(v / 1e6)}M`;
@@ -188,6 +190,7 @@ export function formatValue(ds: Dataset, v: number): string {
  */
 export function formatStat(ds: Dataset, v: number): string {
   if (ds.currency) {
+    if (v < 0) return `−${formatStat(ds, -v)}`;
     const cents = Math.abs(v - Math.round(v)) > 1e-9;
     return `$${v.toLocaleString("en-US", {
       minimumFractionDigits: cents ? 2 : 0,

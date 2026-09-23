@@ -50,8 +50,8 @@ export function Binning() {
             <h1>A boxplot has no classes</h1>
             <p>
               A boxplot is the five-number summary drawn to scale, so there is no
-              width to choose. Switch back to the histogram: the axis is the same,
-              and every value is in the same place.
+              width to choose. Its axis runs out past both fences, the lines beyond
+              which a value counts as an outlier.
             </p>
           </>
         ) : (
@@ -146,7 +146,6 @@ export function Binning() {
           format={(v) => formatValue(ds, v)}
           formatStat={exact}
           units={ds.units}
-          domain={domain}
         />
       ) : (
         <Histogram

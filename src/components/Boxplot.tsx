@@ -9,8 +9,6 @@ type Props = {
   /** How a computed statistic is written, which needs more precision. */
   formatStat: (v: number) => string;
   units: string;
-  /** The same x range the histogram uses for this dataset. */
-  domain: [number, number];
 };
 
 type Part = "lo" | "boxLo" | "boxHi" | "hi" | { outlier: number };
@@ -30,14 +28,30 @@ function valueTicks(lo: number, hi: number): number[] {
   return out;
 }
 
-export function Boxplot({ summary: s, format, formatStat, units, domain }: Props) {
+/**
+ * The boxplot's own x range: out to both fences, and to every value, whichever
+ * reaches further, plus a little room. The histogram's range will not do. It is
+ * built to hold the widest classes, so it overshoots on the right and stops at
+ * the data on the left, which put the upper fence on screen for most datasets
+ * and the lower one for none.
+ *
+ * A fence can land below zero, as it does for the briefcase prizes, and the
+ * axis goes there with it. Nothing is plotted below the minimum.
+ */
+function boxDomain(s: Summary): [number, number] {
+  const lo = Math.min(s.lowerFence, s.min);
+  const hi = Math.max(s.upperFence, s.max);
+  const pad = 0.04 * (hi - lo || 1);
+  return [lo - pad, hi + pad];
+}
+
+export function Boxplot({ summary: s, format, formatStat, units }: Props) {
   const [hover, setHover] = useState<Part | null>(null);
 
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
-  const [xLo, xHi] = domain;
+  const [xLo, xHi] = boxDomain(s);
   const xAt = (v: number) => PAD.left + (plotW * (v - xLo)) / (xHi - xLo);
-  const inDomain = (v: number) => v >= xLo && v <= xHi;
 
   const cy = PAD.top + plotH * 0.55;
   const half = 40;
@@ -117,23 +131,20 @@ export function Boxplot({ summary: s, format, formatStat, units, domain }: Props
       <svg viewBox={`0 0 ${W} ${H}`} role="img"
            aria-label={`Boxplot. Minimum ${formatStat(s.min)}, Q1 ${formatStat(s.q1)}, median ${formatStat(s.median)}, Q3 ${formatStat(s.q3)}, maximum ${formatStat(s.max)}, ${s.outliers.length} outliers.`}>
 
-        {/* The fences are where "outlier" starts. Drawn only when they fall on
-            the axis; the briefcase prizes put the lower one below zero. */}
+        {/* The fences are where "outlier" starts. The axis always reaches both. */}
         {[
           { v: s.lowerFence, name: "lower fence" },
           { v: s.upperFence, name: "upper fence" },
-        ].map((f) =>
-          inDomain(f.v) ? (
-            <g key={f.name}>
-              <line className="fence" x1={xAt(f.v)} x2={xAt(f.v)}
-                    y1={PAD.top + 14} y2={PAD.top + plotH} />
-              <text className="fence-label" x={xAt(f.v)} y={PAD.top + 6}
-                    textAnchor="middle">
-                {f.name}
-              </text>
-            </g>
-          ) : null,
-        )}
+        ].map((f) => (
+          <g key={f.name}>
+            <line className="fence" x1={xAt(f.v)} x2={xAt(f.v)}
+                  y1={PAD.top + 14} y2={PAD.top + plotH} />
+            <text className="fence-label" x={xAt(f.v)} y={PAD.top + 6}
+                  textAnchor="middle">
+              {f.name}
+            </text>
+          </g>
+        ))}
 
         {/* Whiskers first, so the box sits over their ends. */}
         <g className={"whisker" + (is("lo") ? " is-hover" : "")}>
