@@ -208,6 +208,56 @@ export function median(values: number[]): number {
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 }
 
+/** The five-number summary, and everything a boxplot draws from it. */
+export type Summary = {
+  min: number;
+  q1: number;
+  median: number;
+  q3: number;
+  max: number;
+  iqr: number;
+  lowerFence: number;
+  upperFence: number;
+  /** Where the whiskers stop: the most extreme values inside the fences. */
+  whiskerLo: number;
+  whiskerHi: number;
+  /** Values strictly outside the fences, sorted. */
+  outliers: number[];
+};
+
+/**
+ * Quartiles are the medians of the lower and upper halves, with the median
+ * itself left out of both halves when the count is odd. That is the rule a
+ * TI-84's 1-Var Stats uses, so every number here matches a calculator.
+ *
+ * The fences are 1.5 IQR past each quartile. A value exactly on a fence is not
+ * an outlier.
+ */
+export function fiveNumber(values: number[]): Summary {
+  const s = [...values].sort((a, b) => a - b);
+  const n = s.length;
+  const half = n >> 1;
+  const q1 = median(s.slice(0, half));
+  const q3 = median(s.slice(n - half));
+  const iqr = q3 - q1;
+  const lowerFence = q1 - 1.5 * iqr;
+  const upperFence = q3 + 1.5 * iqr;
+  const inside = s.filter((v) => v >= lowerFence && v <= upperFence);
+  return {
+    min: s[0],
+    q1,
+    median: median(s),
+    q3,
+    max: s[n - 1],
+    iqr,
+    lowerFence,
+    upperFence,
+    whiskerLo: inside[0],
+    whiskerHi: inside[inside.length - 1],
+    outliers: s.filter((v) => v < lowerFence || v > upperFence),
+  };
+}
+
 export type Bin = { lo: number; hi: number; count: number };
 
 export function binValues(values: number[], width: number, origin: number): Bin[] {

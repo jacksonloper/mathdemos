@@ -19,7 +19,7 @@ npm run shoot    # screenshots to shots/ (dev server must be running)
 
 | id | Topic | What it shows |
 |----|-------|---------------|
-| `binning` | Histograms | Class width changes the picture. Same data, a slider on the width, a toggle between a frequency and a relative-frequency axis, and a raw view showing every observation unbinned. |
+| `binning` | Histograms | Class width changes the picture. Same data, a slider on the width, a toggle between a frequency and a relative-frequency axis, and a raw view showing every observation unbinned. A second toggle swaps the histogram for a boxplot of the same data, on the same axis. |
 
 A demo may name a course it is used in, via the optional `course` field in the
 registry. None currently do, and the app itself is not tied to any course.
@@ -52,6 +52,12 @@ hand.
   repeats, so one tick per value stacks them all on the same line and the strip
   reads as an evenly spaced ruler, which is the opposite of the truth. Vertical
   jitter lets density show. Nothing about it is binned.
+- **The boxplot uses calculator quartiles.** Q1 and Q3 are the medians of the
+  lower and upper halves, leaving the median out of both when the count is odd,
+  which is what a TI-84's 1-Var Stats does. Outliers are values strictly outside
+  the 1.5 IQR fences; whiskers stop at the last value inside them. It is drawn
+  in the histogram's frame on the histogram's axis, so switching between the two
+  moves no value on the screen.
 - Colours are one categorical slot from a validated palette, with light and dark
   steps checked separately against their own surfaces.
 

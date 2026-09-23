@@ -34,11 +34,18 @@ for (const scheme of ["light", "dark"]) {
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${out}/${scheme}-narrow.png` });
 
-  // Raw values on, back at the default width.
+  // The whole page, value list included, back near the default width.
   await slider.fill(String(Math.round(max / 3)));
-  await page.getByLabel("Show every value").check();
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${out}/${scheme}-raw.png`, fullPage: true });
+
+  // The same data as a boxplot, then the briefcase prizes, which have outliers.
+  await page.getByRole("button", { name: "Boxplot", exact: true }).click();
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `${out}/${scheme}-boxplot.png` });
+  await page.getByRole("button", { name: "Deal or No Deal", exact: true }).click();
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `${out}/${scheme}-boxplot-outliers.png` });
 
   await ctx.close();
 }
