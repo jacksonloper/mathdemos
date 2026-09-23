@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import type { Bin } from "../data/datasets";
+import { H, PAD, W } from "./frame";
 
 type Props = {
   bins: Bin[];
@@ -16,9 +17,6 @@ type Props = {
   domain: [number, number];
 };
 
-const PAD = { top: 30, right: 14, bottom: 40, left: 46 };
-const W = 720;
-const H = 346;
 
 /** A round number of ticks that covers `max` without crowding the axis. */
 function ticksFor(max: number, relative: boolean): number[] {

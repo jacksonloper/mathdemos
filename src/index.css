@@ -190,6 +190,34 @@ button, input { font: inherit; }
 }
 .bar.is-hover { fill: var(--series-1); }
 
+/* Boxplot. Same fill and stroke as the histogram bars, so the two pictures
+   read as the same data. The median is ink, not series colour: it is the one
+   line in the box a reader has to find. */
+.box-half {
+  fill: var(--series-1-soft);
+  stroke: var(--series-1);
+  stroke-width: 1.5;
+  transition: fill 120ms ease;
+}
+.box-half.is-hover { fill: var(--series-1); }
+.median-line { stroke: var(--text-1); stroke-width: 3; }
+.whisker line { stroke: var(--series-1); stroke-width: 2; }
+.whisker.is-hover line { stroke-width: 3.5; }
+.outlier {
+  fill: var(--surface-0);
+  stroke: var(--series-1);
+  stroke-width: 2;
+}
+.outlier.is-hover { fill: var(--series-1); }
+.fence { stroke: var(--text-3); stroke-width: 1; stroke-dasharray: 3 4; }
+.fence-label, .box-label {
+  font: 10px "Helvetica Neue", Helvetica, sans-serif;
+  letter-spacing: 0.06em;
+  fill: var(--text-3);
+}
+.box-label { font-weight: 600; fill: var(--text-2); }
+.hit rect, .hit circle { fill: transparent; cursor: default; }
+
 .ytick, .xtick {
   font: 11px "Helvetica Neue", Helvetica, sans-serif;
   fill: var(--text-3);
