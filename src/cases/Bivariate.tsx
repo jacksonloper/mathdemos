@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { NumberCell } from "../components/NumberCell";
+import { PairsText } from "../components/PairsText";
 import { Scatter } from "../components/Scatter";
 import { bivariateSets, fit, type Pair } from "../data/bivariate";
 
@@ -35,6 +36,8 @@ export function Bivariate() {
   const [preset, setPreset] = useState<number | null>(0);
   const [pairs, setPairs] = useState<Pair[]>(bivariateSets[0].pairs);
   const [labels, setLabels] = useState({ x: bivariateSets[0].xlab, y: bivariateSets[0].ylab });
+  // Boxes one number at a time, or the whole set as text, for pasting.
+  const [entry, setEntry] = useState<"table" | "text">("table");
   // The two questions the line gets asked: predict at one x, and how much y
   // differs when x differs by some amount.
   const [askX, setAskX] = useState(() => defaultAskX(bivariateSets[0].pairs));
@@ -114,6 +117,20 @@ export function Bivariate() {
         </div>
 
         <div className="control">
+          <span className="control-label">Entry</span>
+          <div className="segmented" role="group" aria-label="How to enter the data">
+            <button type="button" className={entry === "table" ? "is-active" : ""}
+                    aria-pressed={entry === "table"} onClick={() => setEntry("table")}>
+              Table
+            </button>
+            <button type="button" className={entry === "text" ? "is-active" : ""}
+                    aria-pressed={entry === "text"} onClick={() => setEntry("text")}>
+              Text
+            </button>
+          </div>
+        </div>
+
+        <div className="control">
           <span className="control-label">Axes</span>
           <button type="button" className="ghost" onClick={swap}>
             Swap x and y
@@ -185,6 +202,14 @@ export function Bivariate() {
 
       {/* The data is always on the page and always editable. A preset only
           fills these boxes in; after that they are the user's. */}
+      {entry === "text" ? (
+        <PairsText value={pairs} labels={labels}
+                   onCommit={(next, heads) => {
+                     edit(next);
+                     if (heads) setLabels(heads);
+                   }} />
+      ) : (
+      <>
       <table className="pairs">
         <thead>
           <tr>
@@ -219,10 +244,12 @@ export function Bivariate() {
       <button type="button" className="ghost add-row" onClick={addRow}>
         Add a row
       </button>
+      </>
+      )}
       <p className="hint">
-        Type over any number, then press Enter, tap ✓, or tap away. Until then
-        the box is amber and the chart has not changed. Anything that is not a
-        number turns red and is put back.
+        {entry === "text"
+          ? "Paste or type one pair per line, x then y, separated by a comma, a tab or a space. A first line of two words names the axes. Nothing changes until you tap ✓ or leave the box; until then it is amber. Text that does not parse turns red, says which line is wrong, and is put back."
+          : "Type over any number, then press Enter, tap ✓, or tap away. Until then the box is amber and the chart has not changed. Anything that is not a number turns red and is put back."}
       </p>
     </section>
   );
