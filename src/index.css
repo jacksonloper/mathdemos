@@ -13,6 +13,8 @@
   --series-2:  #b26a15;
   --series-2-soft: #f2dcbc;
   --ok:        #1d7a4c;
+  --bad:       #b3261e;
+  --bad-soft:  #fbe9e7;
   --focus:     #2a78d6;
   color-scheme: light;
 }
@@ -31,6 +33,8 @@
     --series-2:  #d8912f;
     --series-2-soft: #6a4413;
     --ok:        #43a771;
+    --bad:       #ef6a5f;
+    --bad-soft:  #4a1f1b;
     --focus:     #3987e5;
     color-scheme: dark;
   }
@@ -441,4 +445,109 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
 @media (prefers-reduced-motion: reduce) {
   .balance g[transform], .scales .post, .scales .beam,
   .scales .chain, .scales .pan { transition: none; }
+}
+
+/* ---- line of best fit ---- */
+
+.point { fill: var(--series-1); stroke: var(--surface-0); stroke-width: 1.5; }
+.point.is-hover { fill: var(--text-1); }
+.fitline { stroke: var(--text-1); stroke-width: 1.5; }
+
+.equation {
+  margin: 6px 0 0;
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The data, always on the page and always editable. */
+.pairs {
+  margin-top: 18px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.pairs th {
+  padding: 0 14px 6px 0;
+  text-align: left;
+  font: 600 10px/1 "Helvetica Neue", Helvetica, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.pairs td { padding: 2px 14px 2px 0; }
+.pairs-index { font-size: 12px; color: var(--text-3); }
+
+/* A box to type a number into. Red means what is in it is not a number and
+   will not be kept. */
+.cell {
+  width: 7em;
+  padding: 4px 7px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-1);
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+/* Amber: typed but not yet confirmed. The chart has not heard it. */
+.cell.is-dirty { border-color: var(--series-2); box-shadow: 0 0 0 1px var(--series-2); }
+.cell.is-invalid {
+  border-color: var(--bad);
+  background: var(--bad-soft);
+  color: var(--bad);
+  box-shadow: none;
+}
+
+.cell-wrap { display: inline-flex; align-items: center; gap: 4px; }
+.cell-ok, .cell-no {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-1);
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.cell-ok { color: var(--ok); border-color: var(--ok); }
+.cell-ok:disabled { color: var(--text-3); border-color: var(--line); cursor: default; }
+.cell-no:hover { color: var(--bad); border-color: var(--bad); }
+
+.row-del {
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-3);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.row-del:hover { color: var(--bad); background: var(--bad-soft); }
+
+.add-row { margin-top: 10px; }
+
+.hint {
+  max-width: 62ch;
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+/* Using the line: one x to predict at, one difference in x. The boxes sit in
+   the sentence, and the sentence carries the answer. */
+.use { margin: 16px 0 0; }
+.use p { margin: 0 0 8px; max-width: 70ch; font-size: 15px; }
+.use .cell { width: 5.5em; margin: 0 2px; }
+.use .warn { color: var(--bad); }
+
+.predict line {
+  stroke: var(--series-2);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+.predict circle {
+  fill: var(--surface-0);
+  stroke: var(--series-2);
+  stroke-width: 2;
 }

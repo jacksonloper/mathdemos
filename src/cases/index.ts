@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import { Balance } from "./Balance";
 import { Binning } from "./Binning";
+import { Bivariate } from "./Bivariate";
 
 export type CaseStudy = {
   id: string;
@@ -24,5 +25,11 @@ export const caseStudies: CaseStudy[] = [
     title: "Mean and median",
     topic: "Averages",
     Component: Balance,
+  },
+  {
+    id: "bivariate",
+    title: "Line of best fit",
+    topic: "Regression",
+    Component: Bivariate,
   },
 ];

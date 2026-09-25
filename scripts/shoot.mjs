@@ -47,6 +47,12 @@ for (const scheme of ["light", "dark"]) {
   await page.waitForTimeout(300);
   await page.screenshot({ path: `${out}/${scheme}-boxplot-outliers.png` });
 
+  // The regression demo, with a non-number half-typed into the first box.
+  await page.getByRole("button", { name: "Line of best fit" }).click();
+  await page.waitForSelector(".point");
+  await page.getByLabel("x for row 1").fill("abc");
+  await page.screenshot({ path: `${out}/${scheme}-regression.png`, fullPage: true });
+
   await ctx.close();
 }
 
