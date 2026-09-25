@@ -220,8 +220,9 @@ export function Bivariate() {
         Add a row
       </button>
       <p className="hint">
-        Type over any number. It takes effect when you press Enter or click
-        away. Anything that is not a number turns red and is put back.
+        Type over any number, then press Enter, tap ✓, or tap away. Until then
+        the box is amber and the chart has not changed. Anything that is not a
+        number turns red and is put back.
       </p>
     </section>
   );

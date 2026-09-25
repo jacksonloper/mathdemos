@@ -37,11 +37,13 @@ That is the whole registry. `src/components/Histogram.tsx` is reusable and
 
 - **The table is the data.** Picking a preset only fills the boxes in. After
   that the numbers are the user's, and the preset button goes dark.
-- **A box commits on blur or Enter, never on keystroke.** While something that
-  is not a number is in it, the box is red. On the way out a non-number is
-  discarded and the old value comes back. Escape discards too. So the data
-  behind the chart is always numeric, and a half-typed entry never moves the
-  line.
+- **A box commits on blur, Enter or its ✓, never on keystroke.** While an edit
+  is pending the box is amber and a ✓ and ✕ sit beside it, because a phone's
+  numeric keyboard may have no Enter and a tap elsewhere does not reliably
+  blur. While something that is not a number is in it, the box is red. On the
+  way out a non-number is discarded and the old value comes back. Escape and
+  ✕ discard too. So the data behind the chart is always numeric, and a
+  half-typed entry never moves the line.
 - **The line is drawn over the data's own x range** and no further.
 
 ## Notes on the binning demo

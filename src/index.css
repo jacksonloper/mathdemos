@@ -487,11 +487,31 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
   color: var(--text-1);
   font-variant-numeric: tabular-nums;
 }
+/* Amber: typed but not yet confirmed. The chart has not heard it. */
+.cell.is-dirty { border-color: var(--series-2); box-shadow: 0 0 0 1px var(--series-2); }
 .cell.is-invalid {
   border-color: var(--bad);
   background: var(--bad-soft);
   color: var(--bad);
+  box-shadow: none;
 }
+
+.cell-wrap { display: inline-flex; align-items: center; gap: 4px; }
+.cell-ok, .cell-no {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-1);
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.cell-ok { color: var(--ok); border-color: var(--ok); }
+.cell-ok:disabled { color: var(--text-3); border-color: var(--line); cursor: default; }
+.cell-no:hover { color: var(--bad); border-color: var(--bad); }
 
 .row-del {
   padding: 2px 8px;
