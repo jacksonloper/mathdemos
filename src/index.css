@@ -13,6 +13,8 @@
   --series-2:  #b26a15;
   --series-2-soft: #f2dcbc;
   --ok:        #1d7a4c;
+  --bad:       #b3261e;
+  --bad-soft:  #fbe9e7;
   --focus:     #2a78d6;
   color-scheme: light;
 }
@@ -31,6 +33,8 @@
     --series-2:  #d8912f;
     --series-2-soft: #6a4413;
     --ok:        #43a771;
+    --bad:       #ef6a5f;
+    --bad-soft:  #4a1f1b;
     --focus:     #3987e5;
     color-scheme: dark;
   }
@@ -441,4 +445,71 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
 @media (prefers-reduced-motion: reduce) {
   .balance g[transform], .scales .post, .scales .beam,
   .scales .chain, .scales .pan { transition: none; }
+}
+
+/* ---- line of best fit ---- */
+
+.point { fill: var(--series-1); stroke: var(--surface-0); stroke-width: 1.5; }
+.point.is-hover { fill: var(--text-1); }
+.fitline { stroke: var(--text-1); stroke-width: 1.5; }
+
+.equation {
+  margin: 6px 0 0;
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The data, always on the page and always editable. */
+.pairs {
+  margin-top: 18px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.pairs th {
+  padding: 0 14px 6px 0;
+  text-align: left;
+  font: 600 10px/1 "Helvetica Neue", Helvetica, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.pairs td { padding: 2px 14px 2px 0; }
+.pairs-index { font-size: 12px; color: var(--text-3); }
+
+/* A box to type a number into. Red means what is in it is not a number and
+   will not be kept. */
+.cell {
+  width: 7em;
+  padding: 4px 7px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-1);
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+.cell.is-invalid {
+  border-color: var(--bad);
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+
+.row-del {
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-3);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.row-del:hover { color: var(--bad); background: var(--bad-soft); }
+
+.add-row { margin-top: 10px; }
+
+.hint {
+  max-width: 62ch;
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--text-3);
 }
