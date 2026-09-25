@@ -47,8 +47,8 @@ That is the whole registry. `src/components/Histogram.tsx` is reusable and
 - **The whole set can be one text box instead**, one pair per line, for
   pasting. It follows the same rule on the whole text at once: amber while
   pending, red with the offending line named when it does not parse, and put
-  back on the way out. A first line of two words is a header and names the
-  axes. Limits: 100 rows, 4000 characters.
+  back on the way out. Its first line is the axis names; paste numbers alone
+  and the axes are called x and y. Limits: 100 rows, 4000 characters.
 - **The line is drawn over the data's own x range** and no further.
 
 ## Notes on the binning demo

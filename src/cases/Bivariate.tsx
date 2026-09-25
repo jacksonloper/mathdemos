@@ -206,7 +206,7 @@ export function Bivariate() {
         <PairsText value={pairs} labels={labels}
                    onCommit={(next, heads) => {
                      edit(next);
-                     if (heads) setLabels(heads);
+                     setLabels(heads);
                    }} />
       ) : (
       <>
@@ -248,7 +248,7 @@ export function Bivariate() {
       )}
       <p className="hint">
         {entry === "text"
-          ? "Paste or type one pair per line, x then y, separated by a comma, a tab or a space. A first line of two words names the axes. Nothing changes until you tap ✓ or leave the box; until then it is amber. Text that does not parse turns red, says which line is wrong, and is put back."
+          ? "Paste or type one pair per line, x then y, separated by a comma, a tab or a space. The first line names the axes; paste numbers alone and they are called x and y. Nothing changes until you tap ✓ or leave the box; until then it is amber. Text that does not parse turns red, says which line is wrong, and is put back."
           : "Type over any number, then press Enter, tap ✓, or tap away. Until then the box is amber and the chart has not changed. Anything that is not a number turns red and is put back."}
       </p>
     </section>

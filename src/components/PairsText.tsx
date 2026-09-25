@@ -1,10 +1,12 @@
 import { useRef, useState } from "react";
 import type { Pair } from "../data/bivariate";
-import { MAX_CHARS, parsePairs, serialize } from "../data/pairsText";
+import { MAX_CHARS, parsePairs, serialize, type Labels } from "../data/pairsText";
 
 type Props = {
   value: Pair[];
-  labels: { x: string; y: string };
+  labels: Labels;
+  onCommit: (pairs: Pair[], labels: Labels) => void;
+};
 
 /**
  * The whole data set in one box, for pasting. Same rule as a single number
@@ -14,7 +16,7 @@ type Props = {
  * the way out.
  */
 export function PairsText({ value, labels, onCommit }: Props) {
-  const committed = serialize(value);
+  const committed = serialize(value, labels);
   const [text, setText] = useState(committed);
   const [seen, setSeen] = useState(committed);
   const discard = useRef(false);
@@ -36,7 +38,7 @@ export function PairsText({ value, labels, onCommit }: Props) {
       return;
     }
     if (parsed.ok) {
-      setText(serialize(parsed.pairs));
+      setText(serialize(parsed.pairs, parsed.labels));
       onCommit(parsed.pairs, parsed.labels);
     }
   }
@@ -55,7 +57,7 @@ export function PairsText({ value, labels, onCommit }: Props) {
   return (
     <div className="pairs-text">
       <label className="control-label" htmlFor="pairs-csv">
-        {labels.x} (x), {labels.y} (y), one pair per line
+        The axis names, then one pair per line, x first
       </label>
       <textarea
         id="pairs-csv"
