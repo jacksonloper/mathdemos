@@ -104,6 +104,17 @@ export function Bivariate() {
         <div><dt>r²</dt><dd>{f ? f4(f.r2) : "—"}</dd></div>
       </dl>
 
+      {/* A flat line has a slope, 0, but no r: the proportion of variation
+          in y that the line explains is 0/0 when y has no variation. */}
+      {f && f.yConstant && Number.isFinite(f.slope) ? (
+        <p className="note">
+          r and r² are undefined. The proportion of the variation in y that the
+          line explains has no meaning here, because only one outcome
+          ({f4(f.ybar).replace(/\.?0+$/, "")}) is observed across the whole
+          data set, so there is no variation to explain.
+        </p>
+      ) : null}
+
       <p className="note">
         {preset !== null
           ? bivariateSets[preset].note

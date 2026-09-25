@@ -72,6 +72,8 @@ export type Fit = {
   /** NaN when either variable never varies. */
   r: number;
   r2: number;
+  /** Every y is the same, so there is a flat line but no r. */
+  yConstant: boolean;
 };
 
 /** Least squares, the same numbers a TI-84's LinReg(a+bx) prints. */
@@ -96,5 +98,8 @@ export function fit(pairs: Pair[]): Fit | null {
   }
   const slope = sxy / sxx;
   const r = sxy / Math.sqrt(sxx * syy);
-  return { n, xbar, ybar, slope, intercept: ybar - slope * xbar, r, r2: r * r };
+  return {
+    n, xbar, ybar, slope, intercept: ybar - slope * xbar, r, r2: r * r,
+    yConstant: syy === 0,
+  };
 }
