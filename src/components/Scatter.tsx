@@ -7,6 +7,8 @@ type Props = {
   fit: Fit | null;
   xlab: string;
   ylab: string;
+  /** A prediction to mark: the x asked about and the line's answer. */
+  predict?: { x: number; y: number } | null;
 };
 
 /** Round ticks across a range, about `target` of them. */
@@ -35,15 +37,19 @@ function span(vals: number[]): [number, number] {
 
 const fmt = (v: number) => String(Math.round(v * 1000) / 1000).replace("-", "−");
 
-export function Scatter({ pairs, fit, xlab, ylab }: Props) {
+export function Scatter({ pairs, fit, xlab, ylab, predict = null }: Props) {
   const [hover, setHover] = useState<number | null>(null);
 
   const plotW = W - PAD.left - PAD.right;
   const plotH = H - PAD.top - PAD.bottom;
   const left = PAD.left + 12;
   const empty = pairs.length === 0;
-  const [xLo, xHi] = empty ? [0, 10] : span(pairs.map((p) => p.x));
-  const [yLo, yHi] = empty ? [0, 10] : span(pairs.map((p) => p.y));
+  // The axes take in the predicted point too, so a prediction past the data
+  // is drawn past the end of the line, which is what extrapolating looks like.
+  const px = predict ? [predict.x] : [];
+  const py = predict ? [predict.y] : [];
+  const [xLo, xHi] = empty ? [0, 10] : span([...pairs.map((p) => p.x), ...px]);
+  const [yLo, yHi] = empty ? [0, 10] : span([...pairs.map((p) => p.y), ...py]);
   const xAt = (v: number) => left + ((plotW - 12) * (v - xLo)) / (xHi - xLo);
   const yAt = (v: number) => PAD.top + plotH - (plotH * (v - yLo)) / (yHi - yLo);
 
@@ -80,6 +86,14 @@ export function Scatter({ pairs, fit, xlab, ylab }: Props) {
         <line className="axis" x1={left} x2={left} y1={PAD.top} y2={PAD.top + plotH} />
 
         {line && <line className="fitline" {...line} />}
+
+        {predict && (
+          <g className="predict">
+            <line x1={xAt(predict.x)} x2={xAt(predict.x)} y1={PAD.top + plotH} y2={yAt(predict.y)} />
+            <line x1={left} x2={xAt(predict.x)} y1={yAt(predict.y)} y2={yAt(predict.y)} />
+            <circle cx={xAt(predict.x)} cy={yAt(predict.y)} r={5.5} />
+          </g>
+        )}
 
         {pairs.map((p, i) => (
           <circle key={i} className={"point" + (hover === i ? " is-hover" : "")}

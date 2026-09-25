@@ -513,3 +513,21 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
   font-size: 13px;
   color: var(--text-3);
 }
+
+/* Using the line: one x to predict at, one difference in x. The boxes sit in
+   the sentence, and the sentence carries the answer. */
+.use { margin: 16px 0 0; }
+.use p { margin: 0 0 8px; max-width: 70ch; font-size: 15px; }
+.use .cell { width: 5.5em; margin: 0 2px; }
+.use .warn { color: var(--bad); }
+
+.predict line {
+  stroke: var(--series-2);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+.predict circle {
+  fill: var(--surface-0);
+  stroke: var(--series-2);
+  stroke-width: 2;
+}
