@@ -44,6 +44,11 @@ That is the whole registry. `src/components/Histogram.tsx` is reusable and
   way out a non-number is discarded and the old value comes back. Escape and
   ✕ discard too. So the data behind the chart is always numeric, and a
   half-typed entry never moves the line.
+- **The whole set can be one text box instead**, one pair per line, for
+  pasting. It follows the same rule on the whole text at once: amber while
+  pending, red with the offending line named when it does not parse, and put
+  back on the way out. Its first line is the axis names; paste numbers alone
+  and the axes are called x and y. Limits: 100 rows, 4000 characters.
 - **The line is drawn over the data's own x range** and no further.
 
 ## Notes on the binning demo

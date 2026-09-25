@@ -551,3 +551,38 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
   stroke: var(--series-2);
   stroke-width: 2;
 }
+
+/* The whole data set as text, one pair per line. Same amber and red as the
+   number boxes, on the whole thing at once. */
+.pairs-text { margin-top: 18px; }
+.pairs-text textarea {
+  display: block;
+  width: 100%;
+  max-width: 30em;
+  height: 15em;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-1);
+  color: var(--text-1);
+  font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  resize: vertical;
+}
+.pairs-text textarea.is-dirty { border-color: var(--series-2); box-shadow: 0 0 0 1px var(--series-2); }
+.pairs-text textarea.is-invalid {
+  border-color: var(--bad);
+  background: var(--bad-soft);
+  color: var(--bad);
+  box-shadow: none;
+}
+.pairs-text-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  min-height: 24px;
+  font-size: 13px;
+  color: var(--text-3);
+}
+.pairs-text-status.err { color: var(--bad); }
