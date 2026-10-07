@@ -586,3 +586,57 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
   color: var(--text-3);
 }
 .pairs-text-status.err { color: var(--bad); }
+
+/* ---- two events on a line ---- */
+
+/* Four sliders stacked, one per probability, each with the values it may take
+   right now drawn as a band on its track. The band is the constraint made
+   visible: the overlap cannot exceed the smaller event, and the union cannot
+   exceed 1. The band sits just under the track, since the native track paints
+   over anything behind it. */
+.controls-stack { flex-direction: column; align-items: stretch; gap: 10px; }
+.controls-stack .control { flex-direction: row; align-items: center; gap: 16px; }
+.controls-stack .control-label { width: 6.5em; margin: 0; }
+.track-wrap { position: relative; width: 260px; height: 22px; display: flex; align-items: center; }
+.track-wrap input[type="range"] { width: 100%; margin: 0; position: relative; }
+.track-wrap .allowed {
+  position: absolute;
+  bottom: -3px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--text-3);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.tone-a input[type="range"] { accent-color: var(--series-1); }
+.tone-b input[type="range"] { accent-color: var(--series-2); }
+.tone-both input[type="range"] { accent-color: var(--text-1); }
+.tone-either input[type="range"] { accent-color: var(--text-2); }
+
+.eventline { margin-top: 18px; }
+.eventline .space { fill: var(--surface-1); stroke: var(--line); stroke-width: 1; }
+.eventline .event { transition: x 160ms ease, width 160ms ease; }
+.eventline .ev-a .event { fill: var(--series-1-soft); stroke: var(--series-1); stroke-width: 1; }
+.eventline .ev-b .event { fill: var(--series-2-soft); stroke: var(--series-2); stroke-width: 1; }
+.eventline .ev-both .event { fill: var(--text-2); }
+.eventline .ev-either .event { fill: var(--text-3); opacity: 0.55; }
+.eventline .row-label {
+  font: 600 12px "Helvetica Neue", Helvetica, sans-serif;
+  fill: var(--text-2);
+  text-anchor: end;
+}
+.eventline .row-value {
+  font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+  fill: var(--text-1);
+  text-anchor: end;
+}
+.equation-numbers {
+  display: block;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-1);
+}
+
+@media (max-width: 720px) {
+  .track-wrap { width: 180px; }
+}
