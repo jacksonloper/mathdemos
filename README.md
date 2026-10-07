@@ -20,6 +20,7 @@ npm run shoot    # screenshots to shots/ (dev server must be running)
 | id | Topic | What it shows |
 |----|-------|---------------|
 | `bivariate` | Regression | The line of best fit. Preset paired data or your own, typed into a table that is always on the page; the scatter plot, the least-squares line, its slope and intercept, r and r² follow every edit. A button swaps x and y, which leaves r alone and changes the line. |
+| `two-events` | Probability | A Venn diagram on a line. The sample space is the unit interval, A and B are stretches of it, and four sliders set P(A), P(B), P(A and B) and P(A or B). One equation ties them, so moving one slider moves another; a bar under the overlap and union sliders shows the values that fit. Presets for disjoint, independent and nested. |
 | `binning` | Histograms | Class width changes the picture. Same data, a slider on the width, a toggle between a frequency and a relative-frequency axis, and a raw view showing every observation unbinned. A second toggle swaps the histogram for a boxplot of the same data. |
 
 A demo may name a course it is used in, via the optional `course` field in the
