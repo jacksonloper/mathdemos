@@ -8,17 +8,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
  * Three number lines share one scale, stacked so the eye can compare spreads:
  *
  *   the bag        every marble, flat, the population
- *   this sample    the m marbles just drawn, then a square at their mean
+ *   this grab      the m marbles just drawn, then a square at their mean
  *   sample means   one square per trial, kept, stacking up where they land
  *
  * Each trial clears the middle line and adds one square to the bottom one.
- * The lesson is in the bottom line: squares crowd the population mean more
- * tightly than marbles ever do, and more tightly as m grows. The top and
- * bottom lines are the "individual against the mean" contrast on one screen.
+ * The mean of the latest grab stays marked on the middle line until the next
+ * grab starts, so there is always a "this one" to point at. The lesson is in
+ * the bottom line: squares crowd the population mean more tightly than
+ * marbles ever do, and more tightly as m grows.
  */
 
 const MAX_N = 50;
 const MAX_M = 50;
+const MAX_MEANS = 20000;
 
 type Phase = "idle" | "drawing" | "settling";
 
@@ -44,7 +46,7 @@ export function Sampling() {
   const [n, setN] = useState(33);
   const [m, setM] = useState(5);
   const [means, setMeans] = useState<number[]>([]);
-  // The sample on the middle line. `shown` is how many of its marbles have
+  // The grab on the middle line. `shown` is how many of its marbles have
   // landed so far, so a trial can be watched arriving one marble at a time.
   const [trial, setTrial] = useState<Trial | null>(null);
   const [shown, setShown] = useState(0);
@@ -82,10 +84,11 @@ export function Sampling() {
   }
 
   /**
-   * One trial, animated: the marbles land one by one on the middle line, the
-   * mean square appears above them, then drops to the bottom line and is
-   * kept. `fast` is for runs of ten, where each marble still arrives on its
-   * own but quickly, so a run reads as ten separate grabs and not a batch.
+   * One trial, animated: the marbles land one by one on the middle line; the
+   * mean square appears above them and holds, with its value, long enough to
+   * be read; then it drops to the bottom line and is kept. `fast` is for runs
+   * of ten, where each marble still arrives on its own but quickly, so a run
+   * reads as ten separate grabs and not a batch.
    */
   function runTrial(fast: boolean) {
     const draws = drawSample(n, m);
@@ -94,14 +97,32 @@ export function Sampling() {
     setShown(0);
     setPhase("drawing");
     const perMarble = reduced ? 0 : fast ? Math.min(60, 600 / m) : Math.min(140, 1400 / m);
-    const settle = reduced ? 0 : fast ? 220 : 520;
+    // Hold, then drop. The CSS animation is `hold` of pause then the fall.
+    const settle = reduced ? 0 : fast ? 420 : 1100;
     for (let i = 1; i <= m; i++) later(perMarble * i, () => setShown(i));
     later(perMarble * m + 40, () => setPhase("settling"));
     later(perMarble * m + 40 + settle, () => {
-      setMeans((prev) => (prev.length >= 5000 ? prev : [...prev, t.mean]));
+      setMeans((prev) => (prev.length >= MAX_MEANS ? prev : [...prev, t.mean]));
       setPhase("idle");
       setQueue((q) => Math.max(0, q - 1));
     });
+  }
+
+  /** A thousand trials at once, no animation: the squares just update. The
+   *  last grab is left on the middle line so there is still a "this one". */
+  function runMany(count: number) {
+    clearTimers();
+    const fresh: number[] = [];
+    let last: Trial | null = null;
+    for (let i = 0; i < count; i++) {
+      const draws = drawSample(n, m);
+      last = { draws, mean: mean(draws) };
+      fresh.push(last.mean);
+    }
+    setMeans((prev) => [...prev, ...fresh].slice(-MAX_MEANS));
+    setTrial(last);
+    setShown(m);
+    setPhase("idle");
   }
 
   // A queue of trials runs one after another, never overlapping.
@@ -114,24 +135,15 @@ export function Sampling() {
 
   const busy = phase !== "idle" || queue > 0;
 
-  function one() {
-    if (busy) return;
-    runTrial(false);
-  }
-  function ten() {
-    if (busy) return;
-    setQueue(10);
-  }
-
   // Geometry. One x scale for all three lines.
   const W = 720;
   const PAD = { left: 40, right: 40 };
   const plotW = W - PAD.left - PAD.right;
   const xAt = (v: number) => PAD.left + (plotW * v) / Math.max(1, n - 1);
   const rowBag = { y: 54, h: 30 };
-  const rowSample = { y: 150, h: 60 };
-  const rowMeans = { y: 320, h: 120 };
-  const H = 352;
+  const rowSample = { y: 158, h: 68 };
+  const rowMeans = { y: 328, h: 120 };
+  const H = 360;
 
   // Ticks: every 1, 5 or 10 depending on n.
   const step = n <= 12 ? 1 : n <= 30 ? 5 : 10;
@@ -151,23 +163,29 @@ export function Sampling() {
   }, [trial]);
 
   // Squares on the bottom line stack in pixel bins, so the picture is a
-  // dotplot of the means at the screen's own resolution.
+  // dotplot of the means at the screen's own resolution. Past a couple of
+  // thousand they are drawn as one bar per bin, which is the same picture.
   const bin = 7;
-  const squares = useMemo(() => {
+  const bins = useMemo(() => {
     const cols = new Map<number, number>();
-    return means.map((v) => {
+    for (const v of means) {
       const k = Math.round(xAt(v) / bin);
-      const c = cols.get(k) ?? 0;
-      cols.set(k, c + 1);
-      return { v, k, level: c };
-    });
+      cols.set(k, (cols.get(k) ?? 0) + 1);
+    }
+    return cols;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [means, n]);
-  const maxStack = squares.reduce((a, s) => Math.max(a, s.level + 1), 1);
+  const maxStack = Math.max(1, ...bins.values());
   const sq = Math.min(6, (rowMeans.h - 6) / maxStack);
+  const asBars = means.length > 2000 || sq < 1.5;
 
   const mbar = means.length ? mean(means) : NaN;
   const msd = means.length > 1 ? sd(means, mbar) : NaN;
+
+  // The latest grab's mean marker on the middle line: filled and falling
+  // while settling, hollow and parked once kept.
+  const meanX = trial ? xAt(trial.mean) : 0;
+  const markerTop = rowSample.y - rowSample.h - 2;
 
   return (
     <section className="case">
@@ -204,8 +222,9 @@ export function Sampling() {
         <div className="control">
           <span className="control-label">Run it</span>
           <div className="segmented" role="group" aria-label="Run trials">
-            <button type="button" onClick={one} disabled={busy}>One grab</button>
-            <button type="button" onClick={ten} disabled={busy}>Ten grabs</button>
+            <button type="button" onClick={() => { if (!busy) runTrial(false); }} disabled={busy}>One grab</button>
+            <button type="button" onClick={() => { if (!busy) setQueue(10); }} disabled={busy}>Ten grabs</button>
+            <button type="button" onClick={() => { if (!busy) runMany(1000); }} disabled={busy}>1000 grabs, no animation</button>
             <button type="button" onClick={() => reset()} disabled={means.length === 0 && !busy}>Start over</button>
           </div>
         </div>
@@ -213,16 +232,15 @@ export function Sampling() {
           <span className="control-label">&nbsp;</span>
           <span className="readout sampling-readout" aria-live="polite">
             {phase === "drawing" ? `Drawing… ${shown} of ${m}`
-              : phase === "settling" && trial ? `This grab's mean: ${fmt(trial.mean)}`
-              : means.length === 0 ? "No grabs yet."
-              : `${means.length} grab${means.length === 1 ? "" : "s"} so far.`}
+              : trial ? `This grab's mean: ${fmt(trial.mean)}. ${means.length} kept.`
+              : "No grabs yet."}
           </span>
         </div>
       </div>
 
       <figure className="chart sampling">
         <svg viewBox={`0 0 ${W} ${H}`} role="img"
-             aria-label={`Three number lines from 0 to ${n - 1}: the bag, this sample of ${m}, and ${means.length} sample means.`}>
+             aria-label={`Three number lines from 0 to ${n - 1}: the bag, this grab of ${m}, and ${means.length} sample means.`}>
           {/* The population mean, one dashed line through all three rows. */}
           <line className="mu-line" x1={xAt(mu)} x2={xAt(mu)} y1={rowBag.y - rowBag.h} y2={rowMeans.y + 4} />
           <text className="row-label mu-label" x={xAt(mu)} y={rowBag.y - rowBag.h - 6} textAnchor="middle">
@@ -236,7 +254,7 @@ export function Sampling() {
             <circle key={v} className="marble bag-marble" cx={xAt(v)} cy={rowBag.y - marbleR - 1} r={marbleR} />
           ))}
 
-          {/* Row 2: this sample. */}
+          {/* Row 2: this grab. */}
           <text className="row-label" x={PAD.left} y={rowSample.y - rowSample.h - 6}>
             This grab: {m} marble{m === 1 ? "" : "s"}, with replacement
           </text>
@@ -245,16 +263,24 @@ export function Sampling() {
             <circle key={i} className="marble drawn" cx={xAt(s.v)}
                     cy={rowSample.y - marbleR - 1 - s.level * (2 * marbleR + 1)} r={marbleR} />
           ))}
-          {/* The mean square: appears above the sample once all marbles are
-              in, then drops to the bottom line as the trial is kept. */}
-          {trial && shown === m && phase !== "idle" ? (
-            <g className={`mean-square ${phase === "settling" ? "is-dropping" : ""}`}
-               style={{ "--drop": `${rowMeans.y - rowSample.y}px` } as React.CSSProperties}>
-              <rect x={xAt(trial.mean) - 5} y={rowSample.y - rowSample.h - 2} width={10} height={10} />
-              <text className="mean-value" x={xAt(trial.mean)} y={rowSample.y - rowSample.h - 8} textAnchor="middle">
-                {fmt(trial.mean)}
+
+          {/* The mean of this grab. While settling: a filled square that holds
+              above the marbles with its value, then falls to the bottom line.
+              Once kept: a hollow square parked where it was, with the value,
+              until the next grab begins. */}
+          {trial && shown === m && phase === "settling" ? (
+            <g className="mean-square is-dropping"
+               style={{ "--drop": `${rowMeans.y - rowSample.y}px`, "--hold": reduced ? "0ms" : queue > 0 ? "180ms" : "520ms" } as React.CSSProperties}>
+              <rect x={meanX - 5} y={markerTop} width={10} height={10} />
+            </g>
+          ) : null}
+          {trial && shown === m && phase !== "drawing" ? (
+            <g className="mean-mark">
+              <rect x={meanX - 5} y={markerTop} width={10} height={10} />
+              <text className="mean-value" x={meanX + 9} y={markerTop + 9} textAnchor="start">
+                mean {fmt(trial.mean)}
               </text>
-              <line className="mean-tick" x1={xAt(trial.mean)} x2={xAt(trial.mean)} y1={rowSample.y - rowSample.h + 8} y2={rowSample.y} />
+              <line className="mean-tick" x1={meanX} x2={meanX} y1={markerTop + 10} y2={rowSample.y} />
             </g>
           ) : null}
 
@@ -263,10 +289,15 @@ export function Sampling() {
             Sample means: one square per grab, kept
           </text>
           <line className="axis" x1={PAD.left} x2={W - PAD.right} y1={rowMeans.y} y2={rowMeans.y} />
-          {squares.map((s, i) => (
-            <rect key={i} className={`kept ${i === squares.length - 1 && phase === "idle" ? "is-new" : ""}`}
-                  x={s.k * bin - sq / 2} y={rowMeans.y - sq - 1 - s.level * sq} width={sq} height={sq} />
-          ))}
+          {asBars
+            ? [...bins.entries()].map(([k, c]) => (
+                <rect key={k} className="kept" x={k * bin - 3} y={rowMeans.y - 1 - c * sq} width={6} height={c * sq} />
+              ))
+            : [...bins.entries()].flatMap(([k, c]) =>
+                Array.from({ length: c }, (_, level) => (
+                  <rect key={`${k}-${level}`} className="kept"
+                        x={k * bin - sq / 2} y={rowMeans.y - sq - 1 - level * sq} width={sq} height={sq} />
+                )))}
           {ticks.map((t) => (
             <g key={t}>
               <line className="axis" x1={xAt(t)} x2={xAt(t)} y1={rowMeans.y} y2={rowMeans.y + 5} />
