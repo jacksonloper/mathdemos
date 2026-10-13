@@ -162,21 +162,27 @@ export function Sampling() {
     });
   }, [trial]);
 
-  // Squares on the bottom line stack in pixel bins, so the picture is a
-  // dotplot of the means at the screen's own resolution. Past a couple of
-  // thousand they are drawn as one bar per bin, which is the same picture.
-  const bin = 7;
+  // Squares on the bottom line stack in bins. A mean of m marbles is always
+  // a multiple of 1/m, so the bins are built on that grid: each one holds the
+  // same number of possible means, k of them, with k chosen so a bin is at
+  // least 7 px wide. Binning by pixel instead would catch two grid points in
+  // one bin and one in the next, and stripe the picture.
+  const pxPerStep = plotW / Math.max(1, n - 1) / m;
+  const k = Math.max(1, Math.ceil(7 / pxPerStep));
+  const binW = Math.max(2, k * pxPerStep - 1);
   const bins = useMemo(() => {
     const cols = new Map<number, number>();
     for (const v of means) {
-      const k = Math.round(xAt(v) / bin);
-      cols.set(k, (cols.get(k) ?? 0) + 1);
+      const j = Math.round(v * m);
+      const idx = Math.floor(j / k);
+      cols.set(idx, (cols.get(idx) ?? 0) + 1);
     }
     return cols;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [means, n]);
+  }, [means, n, m, k]);
+  const binX = (idx: number) => xAt((idx * k + (k - 1) / 2) / m);
   const maxStack = Math.max(1, ...bins.values());
-  const sq = Math.min(6, (rowMeans.h - 6) / maxStack);
+  const sq = Math.min(6, binW, (rowMeans.h - 6) / maxStack);
   const asBars = means.length > 2000 || sq < 1.5;
 
   const mbar = means.length ? mean(means) : NaN;
@@ -290,13 +296,13 @@ export function Sampling() {
           </text>
           <line className="axis" x1={PAD.left} x2={W - PAD.right} y1={rowMeans.y} y2={rowMeans.y} />
           {asBars
-            ? [...bins.entries()].map(([k, c]) => (
-                <rect key={k} className="kept" x={k * bin - 3} y={rowMeans.y - 1 - c * sq} width={6} height={c * sq} />
+            ? [...bins.entries()].map(([idx, c]) => (
+                <rect key={idx} className="kept" x={binX(idx) - binW / 2} y={rowMeans.y - 1 - c * sq} width={binW} height={c * sq} />
               ))
-            : [...bins.entries()].flatMap(([k, c]) =>
+            : [...bins.entries()].flatMap(([idx, c]) =>
                 Array.from({ length: c }, (_, level) => (
-                  <rect key={`${k}-${level}`} className="kept"
-                        x={k * bin - sq / 2} y={rowMeans.y - sq - 1 - level * sq} width={sq} height={sq} />
+                  <rect key={`${idx}-${level}`} className="kept"
+                        x={binX(idx) - sq / 2} y={rowMeans.y - sq - 1 - level * sq} width={sq} height={sq} />
                 )))}
           {ticks.map((t) => (
             <g key={t}>
