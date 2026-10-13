@@ -3,6 +3,7 @@ import { Balance } from "./Balance";
 import { Binning } from "./Binning";
 import { Bivariate } from "./Bivariate";
 import { TwoEvents } from "./TwoEvents";
+import { Sampling } from "./Sampling";
 
 export type CaseStudy = {
   id: string;
@@ -38,5 +39,11 @@ export const caseStudies: CaseStudy[] = [
     title: "Two events on a line",
     topic: "Probability",
     Component: TwoEvents,
+  },
+  {
+    id: "sampling",
+    title: "Grab marbles, take the mean",
+    topic: "Sampling distributions",
+    Component: Sampling,
   },
 ];

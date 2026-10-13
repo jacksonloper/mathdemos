@@ -20,6 +20,7 @@ npm run shoot    # screenshots to shots/ (dev server must be running)
 | id | Topic | What it shows |
 |----|-------|---------------|
 | `bivariate` | Regression | The line of best fit. Preset paired data or your own, typed into a table that is always on the page; the scatter plot, the least-squares line, its slope and intercept, r and r² follow every edit. A button swaps x and y, which leaves r alone and changes the line. |
+| `sampling` | Sampling distributions | The sampling distribution of the mean, built one grab at a time. A bag of n numbered marbles, m drawn with replacement; the marbles land on one number line, their mean drops as a square onto a second, and the squares pile up over the trials. Sliders for n and m, buttons for one grab or ten in succession, and the SD of the means beside σ/√m. |
 | `two-events` | Probability | A Venn diagram on a line. The sample space is the unit interval, A and B are stretches of it, and four sliders set P(A), P(B), P(A and B) and P(A or B). One equation ties them, so moving one slider moves another; a bar under the overlap and union sliders shows the values that fit. Presets for disjoint, independent and nested. |
 | `binning` | Histograms | Class width changes the picture. Same data, a slider on the width, a toggle between a frequency and a relative-frequency axis, and a raw view showing every observation unbinned. A second toggle swaps the histogram for a boxplot of the same data. |
 
