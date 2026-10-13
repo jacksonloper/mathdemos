@@ -694,3 +694,8 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
 @media (prefers-reduced-motion: reduce) {
   .sampling .drawn, .sampling .mean-square.is-dropping, .sampling .mean-mark { animation: none; }
 }
+
+/* Black-and-white bag: a black marble is a 1, a white one a 0. */
+.sampling .marble.black { fill: var(--text-1); stroke: var(--text-1); }
+.sampling .marble.white { fill: var(--surface-0); stroke: var(--text-1); }
+.sampling .bag-marble.black, .sampling .bag-marble.white { opacity: 0.85; }
