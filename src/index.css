@@ -699,3 +699,11 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
 .sampling .marble.black { fill: var(--text-1); stroke: var(--text-1); }
 .sampling .marble.white { fill: var(--surface-0); stroke: var(--text-1); }
 .sampling .bag-marble.black, .sampling .bag-marble.white { opacity: 0.85; }
+
+/* Density mode of the class-width demo: the bars step back and the frequency
+   polygon, the curve the histogram is becoming, sits on top of them. */
+.bar.is-under { fill: var(--surface-1); stroke: var(--line); }
+.bar.is-under.is-hover { fill: var(--series-1-soft); }
+.poly-fill { fill: var(--series-1-soft); opacity: 0.55; pointer-events: none; }
+.poly { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linejoin: round; pointer-events: none; }
+.poly-dot { fill: var(--series-1); pointer-events: none; }

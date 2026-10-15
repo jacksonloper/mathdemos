@@ -421,3 +421,23 @@ export function binDomain(ds: Dataset): [number, number] {
   }
   return [lo, hi];
 }
+
+/**
+ * The tallest bar a dataset can produce at any class width the slider offers,
+ * as a relative frequency and as a density (relative frequency per unit of
+ * width). Fixing the vertical axis to these keeps the scale still while the
+ * slider moves, which is what makes the two axes comparable: relative
+ * frequencies shrink toward zero as the classes narrow, densities do not.
+ */
+export function peakHeights(ds: Dataset): { relative: number; density: number } {
+  let relative = 0;
+  let density = 0;
+  const n = ds.values.length;
+  for (const w of ds.widths) {
+    for (const b of binValues(ds.values, w, ds.origin)) {
+      relative = Math.max(relative, b.count / n);
+      density = Math.max(density, b.count / n / w);
+    }
+  }
+  return { relative, density };
+}
