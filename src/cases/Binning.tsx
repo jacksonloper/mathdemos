@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react";
 import { Boxplot } from "../components/Boxplot";
-import { Histogram } from "../components/Histogram";
+import { Histogram, type Mode } from "../components/Histogram";
 import {
-  binDomain, binValues, datasets, fiveNumber, formatStat, formatValue,
+  binDomain, binValues, datasets, fiveNumber, formatStat, formatValue, peakHeights,
 } from "../data/datasets";
 
 export function Binning() {
   const [dsIndex, setDsIndex] = useState(0);
   const [widthIndex, setWidthIndex] = useState(datasets[0].defaultWidth);
-  const [relative, setRelative] = useState(false);
+  const [mode, setMode] = useState<Mode>("frequency");
   const [chart, setChart] = useState<"histogram" | "boxplot">("histogram");
   const boxplot = chart === "boxplot";
 
@@ -19,6 +19,12 @@ export function Binning() {
     [ds, width],
   );
   const domain = useMemo(() => binDomain(ds), [ds]);
+  // The relative and density axes are held at the dataset's tallest possible
+  // bar, so the scale does not move with the slider. That is what shows the
+  // difference between them: relative frequencies flatten toward zero as the
+  // classes narrow, densities keep their height and settle toward a curve.
+  const peaks = useMemo(() => peakHeights(ds), [ds]);
+  const yTop = mode === "relative" ? peaks.relative : mode === "density" ? peaks.density : undefined;
 
   function pickDataset(i: number) {
     setDsIndex(i);
@@ -122,14 +128,12 @@ export function Binning() {
           <div className="control">
             <span className="control-label">Vertical axis</span>
             <div className="segmented" role="group" aria-label="Choose the vertical axis">
-              <button type="button" className={!relative ? "is-active" : ""}
-                      aria-pressed={!relative} onClick={() => setRelative(false)}>
-                Frequency
-              </button>
-              <button type="button" className={relative ? "is-active" : ""}
-                      aria-pressed={relative} onClick={() => setRelative(true)}>
-                Relative
-              </button>
+              {(["frequency", "relative", "density"] as Mode[]).map((m) => (
+                <button key={m} type="button" className={mode === m ? "is-active" : ""}
+                        aria-pressed={mode === m} onClick={() => setMode(m)}>
+                  {m === "frequency" ? "Frequency" : m === "relative" ? "Relative" : "Density"}
+                </button>
+              ))}
             </div>
           </div>
           </>
@@ -152,8 +156,10 @@ export function Binning() {
           bins={bins}
           format={(v) => formatValue(ds, v)}
           units={ds.units}
+          unit={ds.unit}
           total={ds.values.length}
-          relative={relative}
+          mode={mode}
+          yTop={yTop}
           domain={domain}
         />
       )}
@@ -198,6 +204,25 @@ export function Binning() {
 
       {/* The notes are about class widths, so they stay with the histogram. */}
       {!boxplot && <p className="note">{ds.note}</p>}
+      {!boxplot && mode === "relative" && (
+        <p className="note">
+          <strong>The axis is pinned</strong> at the tallest bar this data can
+          make at any width. Narrow the classes and every bar shrinks toward
+          the floor: each one holds a smaller share. Relative frequency is a
+          proportion per class, and the classes keep changing.
+        </p>
+      )}
+      {!boxplot && mode === "density" && (
+        <p className="note">
+          <strong>Density is proportion per unit of width,</strong> so a bar's
+          area, not its height, is its share. The axis is pinned too, and the
+          bars no longer shrink as the classes narrow. The line joins the tops
+          of the bars at their midpoints and runs to zero one half-class past
+          each end. Every piece of it is a trapezoid with the same area as the
+          bar-halves under it, so its total area is 1 without any rescaling.
+          That line is what the histogram is turning into: a density curve.
+        </p>
+      )}
 
       {boxplot ? (
         <details className="table-view">
@@ -223,7 +248,7 @@ export function Binning() {
             <thead>
               <tr>
                 <th>At least</th><th>Less than</th>
-                <th>Frequency</th><th>Relative frequency</th>
+                <th>Frequency</th><th>Relative frequency</th><th>Density</th>
               </tr>
             </thead>
             <tbody>
@@ -233,12 +258,14 @@ export function Binning() {
                   <td>{formatValue(ds, b.hi)}</td>
                   <td>{b.count}</td>
                   <td>{(b.count / ds.values.length).toFixed(3)}</td>
+                  <td>{(b.count / ds.values.length / width).toFixed(4)}</td>
                 </tr>
               ))}
               <tr className="total">
                 <td colSpan={2}>Total</td>
                 <td>{ds.values.length}</td>
                 <td>1.000</td>
+                <td>{(1 / width).toFixed(4)}</td>
               </tr>
             </tbody>
           </table>
