@@ -586,6 +586,18 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
   color: var(--text-3);
 }
 .pairs-text-status.err { color: var(--bad); }
+/* A flat list of numbers needs less height than one pair per line. */
+.values-text { margin-top: 0; margin-bottom: 14px; }
+.values-text textarea { height: 6em; max-width: 44em; }
+.units-input {
+  width: 7em;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-1);
+  color: var(--text-1);
+  font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
 
 /* ---- two events on a line ---- */
 
