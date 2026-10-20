@@ -17,12 +17,13 @@ import { MAX_CHARS, parseMarbles, serializeMarbles, type Marble } from "../data/
  *
  *   the bag        every marble, the population
  *   this grab      the m marbles just drawn, then a square at their mean
- *   sample means   one square per trial, kept, stacking up where they land
+ *   sample means   a frequency histogram of every trial's statistic so far
  *
- * Each trial clears the middle line and adds one square to the bottom one.
- * The latest grab's mean stays marked on the middle line until the next grab
- * starts. The lesson is in the bottom line: squares crowd the population
- * value more tightly than marbles ever do, and more tightly as m grows.
+ * Each trial clears the middle line and adds one count to a bar on the
+ * bottom one. The latest grab's mean stays marked on the middle line until
+ * the next grab starts. The lesson is in the bottom line: the histogram
+ * crowds the population value more tightly than marbles ever do, and more
+ * tightly as m grows.
  */
 
 const MAX_N = 50;
@@ -193,7 +194,7 @@ export function Sampling() {
     });
   }
 
-  /** A thousand trials at once, no animation: the squares just update. The
+  /** A thousand trials at once, no animation: the histogram just updates. The
    *  last grab is left on the middle line so there is still a "this one". */
   function runMany(count: number) {
     clearTimers();
@@ -273,14 +274,15 @@ export function Sampling() {
     });
   }, [trial, mode, marbleR]);
 
-  // Squares on the bottom line stack in bins. A mean of m marbles is always
-  // a multiple of 1/m (when the marbles are whole numbers), so the bins are
-  // built on that grid: each one holds the same number of possible means, k
-  // of them, with k chosen so a bin is at least 7 px wide. Binning by pixel
-  // would stripe the picture.
+  // The bottom line is a frequency histogram with fixed-width bins. A mean
+  // of m marbles is always a multiple of 1/m (when the marbles are whole
+  // numbers), so the bins are built on that grid: each one holds the same
+  // number of possible means, k of them, with k chosen so a bin is at least
+  // 7 px wide. Binning by pixel would stripe the picture. The bins never
+  // change as grabs accumulate; only the counts do.
   const pxPerStep = plotW / (hi - lo) / mEff;
   const k = Math.max(1, Math.ceil(7 / pxPerStep));
-  const binW = Math.max(2, k * pxPerStep - 1);
+  const binW = Math.max(2, k * pxPerStep - 0.6);
   const bins = useMemo(() => {
     const cols = new Map<number, number>();
     for (const v of means) {
@@ -292,9 +294,14 @@ export function Sampling() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [means, hi, lo, mEff, k]);
   const binX = (idx: number) => xAt(lo + (idx * k + (k - 1) / 2) / mEff);
-  const maxStack = Math.max(1, ...bins.values());
-  const sq = Math.min(6, binW, (rowMeans.h - 6) / maxStack);
-  const asBars = means.length > 2000 || sq < 1.5;
+  // The frequency axis starts at 0 to 6, so the first few grabs are tall
+  // enough to see, and only begins to rescale once a bar passes 6.
+  const maxCount = Math.max(0, ...bins.values());
+  const yMax = Math.max(6, maxCount);
+  const barH = (c: number) => ((rowMeans.h - 8) * c) / yMax;
+  const yStep = yMax <= 6 ? 1 : yMax <= 12 ? 2 : yMax <= 30 ? 5 : yMax <= 60 ? 10 : yMax <= 150 ? 25 : yMax <= 300 ? 50 : yMax <= 600 ? 100 : yMax <= 1500 ? 250 : 500;
+  const yTicks: number[] = [];
+  for (let t = 0; t <= yMax; t += yStep) yTicks.push(t);
 
   const mbar = means.length ? mean(means) : NaN;
   const msd = means.length > 1 ? sd(means, mbar) : NaN;
@@ -513,18 +520,20 @@ export function Sampling() {
 
           {/* Row 3: every statistic so far. */}
           <text className="row-label" x={PAD.left} y={rowMeans.y - rowMeans.h - 6}>
-            Sample {stat}s: one square per {grabWord}, kept
+            Sample {stat}s: how many {grabWord}s landed in each bin
           </text>
           <line className="axis" x1={PAD.left} x2={W - PAD.right} y1={rowMeans.y} y2={rowMeans.y} />
-          {asBars
-            ? [...bins.entries()].map(([idx, c]) => (
-                <rect key={idx} className="kept" x={binX(idx) - binW / 2} y={rowMeans.y - 1 - c * sq} width={binW} height={c * sq} />
-              ))
-            : [...bins.entries()].flatMap(([idx, c]) =>
-                Array.from({ length: c }, (_, level) => (
-                  <rect key={`${idx}-${level}`} className="kept"
-                        x={binX(idx) - sq / 2} y={rowMeans.y - sq - 1 - level * sq} width={sq} height={sq} />
-                )))}
+          {/* The frequency axis, up the left side of the bottom row. */}
+          <line className="axis" x1={PAD.left} x2={PAD.left} y1={rowMeans.y} y2={rowMeans.y - rowMeans.h + 8} />
+          {yTicks.map((t) => (
+            <g key={t}>
+              <line className="axis" x1={PAD.left - 4} x2={PAD.left} y1={rowMeans.y - barH(t)} y2={rowMeans.y - barH(t)} />
+              <text className="ytick" x={PAD.left - 7} y={rowMeans.y - barH(t) + 3} textAnchor="end">{t}</text>
+            </g>
+          ))}
+          {[...bins.entries()].map(([idx, c]) => (
+            <rect key={idx} className="kept" x={binX(idx) - binW / 2} y={rowMeans.y - barH(c)} width={binW} height={barH(c)} />
+          ))}
           {ticks.map((t) => (
             <g key={t.label}>
               <line className="axis" x1={xAt(t.v)} x2={xAt(t.v)} y1={rowMeans.y} y2={rowMeans.y + 5} />
@@ -565,18 +574,18 @@ export function Sampling() {
           <>
             <p>
               <strong>Two spreads on one scale.</strong> The marbles on the top
-              line are as spread out as they come. The squares on the bottom line
-              crowd the dashed line. One marble can land anywhere in the bag; the
+              line are as spread out as they come. The histogram on the bottom line
+              crowds the dashed line. One marble can land anywhere in the bag; the
               mean of {m} rarely strays far from μ.
             </p>
             <p>
               <strong>How far they stray is σ ÷ √m.</strong> After enough grabs
               the SD of the means settles next to that number. Move the grab size
-              up and the squares pull in; move it down to 1 and the bottom line is
+              up and the histogram pulls in; move it down to 1 and the bottom line is
               just the bag again.
             </p>
             <p>
-              <strong>And the shape.</strong> The bag is flat. The squares are
+              <strong>And the shape.</strong> The bag is flat. The histogram is
               not: with a few marbles per grab they already pile up in the
               middle, and by a few dozen they make a bell. That is the Central
               Limit Theorem, and the bag never had to be bell-shaped for it.
@@ -611,12 +620,12 @@ export function Sampling() {
               everyone, so its mean μ is not an estimate of anything: it is the
               answer. A real survey never has this line. It has one grab from the
               middle line and has to live with that grab's mean, which is one of
-              the squares below, somewhere near μ and almost never on it.
+              the bars below, somewhere near μ and almost never on it.
             </p>
             <p>
               <strong>How near is σ ÷ √m.</strong> After enough samples the SD of
               the means settles next to that number. Drawing no one twice pulls
-              the squares in a little more, by the factor √((N − m)/(N − 1)) for a room of N, and
+              the histogram in a little more, by the factor √((N − m)/(N − 1)) for a room of N, and
               a sample as big as the room has only one possible mean: μ itself.
               Switch to drawing with replacement and the correction goes away.
             </p>
