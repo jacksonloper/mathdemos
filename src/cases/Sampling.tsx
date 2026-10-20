@@ -320,7 +320,7 @@ export function Sampling() {
     return { ok: true, value: r.marbles, summary: `${r.marbles.length} people · ${text.length} of ${MAX_CHARS} characters` };
   };
 
-  const grabWord = noRepeats ? "sample" : "grab";
+  const grabWord = noRepeats ? "survey" : "grab";
 
   return (
     <section className="case">
@@ -480,7 +480,7 @@ export function Sampling() {
           {/* Row 2: this grab. */}
           <text className="row-label" x={PAD.left} y={rowSample.y - rowSample.h - 6}>
             {noRepeats
-              ? `This sample: ${mEff} ${mEff === 1 ? "person" : "people"}, no one twice`
+              ? `This survey: ${mEff} ${mEff === 1 ? "person" : "people"}, no one twice`
               : `This grab: ${mEff} marble${mEff === 1 ? "" : "s"}, with replacement`}
           </text>
           <line className="axis" x1={PAD.left} x2={W - PAD.right} y1={rowSample.y} y2={rowSample.y} />
