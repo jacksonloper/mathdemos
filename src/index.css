@@ -586,6 +586,18 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
   color: var(--text-3);
 }
 .pairs-text-status.err { color: var(--bad); }
+/* A flat list of numbers needs less height than one pair per line. */
+.values-text { margin-top: 0; margin-bottom: 14px; }
+.values-text textarea { height: 6em; max-width: 44em; }
+.units-input {
+  width: 7em;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-1);
+  color: var(--text-1);
+  font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
 
 /* ---- two events on a line ---- */
 
@@ -694,6 +706,15 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
 @media (prefers-reduced-motion: reduce) {
   .sampling .drawn, .sampling .mean-square.is-dropping, .sampling .mean-mark { animation: none; }
 }
+
+/* The typed bag: every marble carries its person's initial and number. */
+.sampling .marble-label {
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  font-weight: 600;
+  fill: var(--text-1);
+  pointer-events: none;
+}
+.sampling .marble-label.on-drawn { fill: var(--surface-0); animation: square-in 200ms ease both; }
 
 /* Black-and-white bag: a black marble is a 1, a white one a 0. */
 .sampling .marble.black { fill: var(--text-1); stroke: var(--text-1); }

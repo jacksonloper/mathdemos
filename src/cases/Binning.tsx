@@ -1,18 +1,32 @@
 import { useMemo, useState } from "react";
 import { Boxplot } from "../components/Boxplot";
 import { Histogram, type Mode } from "../components/Histogram";
+import { ValuesText } from "../components/ValuesText";
 import {
   binDomain, binValues, datasets, fiveNumber, formatStat, formatValue, peakHeights,
 } from "../data/datasets";
+import { customDataset } from "../data/valuesText";
+
+/** The "Your data" entry sits past the built-in sets in the data picker. */
+const CUSTOM = datasets.length;
+
+/** Something to look at before anyone has typed: twenty-five dart throws, in cm. */
+const SAMPLE = [4, 12, 7, 3, 19, 8, 6, 25, 11, 5, 9, 2, 14, 7, 31, 10, 6, 13, 8, 4, 17, 9, 5, 22, 7];
 
 export function Binning() {
   const [dsIndex, setDsIndex] = useState(0);
   const [widthIndex, setWidthIndex] = useState(datasets[0].defaultWidth);
   const [mode, setMode] = useState<Mode>("frequency");
   const [chart, setChart] = useState<"histogram" | "boxplot">("histogram");
+  const [customValues, setCustomValues] = useState<number[]>(SAMPLE);
+  const [customUnits, setCustomUnits] = useState("cm");
   const boxplot = chart === "boxplot";
 
-  const ds = datasets[dsIndex];
+  // A typed list is wrapped as a dataset of its own, so everything below
+  // treats it exactly like a built-in one: its class widths are a ladder of
+  // round numbers from one class to twenty-odd, rebuilt whenever it changes.
+  const custom = useMemo(() => customDataset(customValues, customUnits), [customValues, customUnits]);
+  const ds = dsIndex === CUSTOM ? custom : datasets[dsIndex];
   const width = ds.widths[Math.min(widthIndex, ds.widths.length - 1)];
   const bins = useMemo(
     () => binValues(ds.values, width, ds.origin),
@@ -28,7 +42,11 @@ export function Binning() {
 
   function pickDataset(i: number) {
     setDsIndex(i);
-    setWidthIndex(datasets[i].defaultWidth);
+    setWidthIndex(i === CUSTOM ? custom.defaultWidth : datasets[i].defaultWidth);
+  }
+  function commitValues(values: number[]) {
+    setCustomValues(values);
+    setWidthIndex(customDataset(values, customUnits).defaultWidth);
   }
 
   // A width is a quantity in the data's own units, so money is written as
@@ -75,7 +93,7 @@ export function Binning() {
         <div className="control">
           <span className="control-label">Data</span>
           <div className="segmented" role="group" aria-label="Choose a data set">
-            {datasets.map((d, i) => (
+            {[...datasets, custom].map((d, i) => (
               <button
                 key={d.id}
                 type="button"
@@ -88,6 +106,21 @@ export function Binning() {
             ))}
           </div>
         </div>
+
+        {dsIndex === CUSTOM && (
+          <div className="control">
+            <label className="control-label" htmlFor="custom-units">Units</label>
+            <input
+              id="custom-units"
+              className="units-input"
+              type="text"
+              value={customUnits}
+              maxLength={16}
+              spellCheck={false}
+              onChange={(e) => setCustomUnits(e.target.value)}
+            />
+          </div>
+        )}
 
         <div className="control">
           <span className="control-label">Chart</span>
@@ -139,6 +172,10 @@ export function Binning() {
           </>
         )}
       </div>
+
+      {dsIndex === CUSTOM && (
+        <ValuesText value={customValues} onCommit={commitValues} />
+      )}
 
       <p className="blurb">
         {ds.blurb} · <strong>{ds.values.length}</strong> values
