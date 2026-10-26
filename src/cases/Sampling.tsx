@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { TextEntry, type ParseResult } from "../components/TextEntry";
 import { MAX_CHARS, parseMarbles, serializeMarbles, type Marble } from "../data/marbleText";
+import { exactMeans } from "../data/exactDistribution";
 
 /**
  * The sampling distribution of the mean, and of a proportion, built by hand.
@@ -24,6 +25,10 @@ import { MAX_CHARS, parseMarbles, serializeMarbles, type Marble } from "../data/
  * the next grab starts. The lesson is in the bottom line: the histogram
  * crowds the population value more tightly than marbles ever do, and more
  * tightly as m grows.
+ *
+ * Under the notes, for grabs of four or fewer, the exact distribution the
+ * histogram is chasing: every possible mean, how many grabs give it, and its
+ * probability. Past four, or past 500 possible means, the table is skipped.
  */
 
 const MAX_N = 50;
@@ -44,6 +49,9 @@ const sd = (xs: number[], mu: number) =>
   Math.sqrt(xs.reduce((a, x) => a + (x - mu) * (x - mu), 0) / xs.length);
 
 const fmt = (v: number, d = 2) => (Number.isFinite(v) ? v.toFixed(d) : "—");
+/** A possible mean, to as many places as it needs and no more than four. */
+const fmtExact = (v: number) => String(Number(v.toFixed(4)));
+const fmtProb = (v: number) => (v > 0 && v < 0.00005 ? "< 0.0001" : v.toFixed(4));
 
 /** Something in the bag before anyone has typed: twenty people and their keys. */
 const SAMPLE_CENSUS: Marble[] = "A3 B7 C2 D5 E4 F6 G3 H1 J8 K2 L4 M3 N5 P2 R6 S3 T4 V7 W2 Z5"
@@ -116,6 +124,14 @@ export function Sampling() {
   // Drawing without replacement from a small bag pulls the means in a little
   // more than σ ÷ √m says: the finite population correction.
   const fpc = noRepeats && census.length > 1 ? Math.sqrt((census.length - mEff) / (census.length - 1)) : 1;
+  // The exact sampling distribution, for small grabs. The numbered and
+  // black-and-white bags are drawn with replacement; the typed bag by its switch.
+  const exact = useMemo(() => {
+    const values = mode === "mean" ? Array.from({ length: n }, (_, v) => v)
+      : mode === "proportion" ? [...Array(black).fill(1), ...Array(white).fill(0)]
+      : censusValues;
+    return exactMeans(values, mEff, !noRepeats);
+  }, [mode, n, black, white, censusValues, mEff, noRepeats]);
   const lo = custom ? Math.min(0, ...censusValues) : 0;
   const hi = mode === "mean" ? Math.max(1, n - 1) : mode === "proportion" ? 1 : Math.max(lo + 1, ...censusValues);
 
@@ -308,7 +324,14 @@ export function Sampling() {
 
   const meanX = trial ? xAt(trial.mean) : 0;
   const markerTop = rowSample.y - rowSample.h - 2;
+  // The three words the demo keeps apart: the population's value, one grab's
+  // value, and the long-run average of the grabs' values.
   const stat = mode === "proportion" ? "proportion" : "mean";
+  const popStat = `population ${stat}`;
+  const sampleStat = `sample ${stat}`;
+  const expStat = `expected value of the sample ${stat}`;
+  const muLabel = mode === "proportion" ? `population proportion p = ${fmt(p)}` : `population mean μ = ${fmt(mu, 2)}`;
+  const muAnchor = xAt(mu) < PAD.left + 100 ? "start" : xAt(mu) > W - PAD.right - 100 ? "end" : "middle";
   const bagPiles = mode === "proportion"
     ? { white: pile(white, 13, 3), black: pile(black, 13, 3) }
     : null;
@@ -332,10 +355,10 @@ export function Sampling() {
         </h1>
         <p>
           {mode === "mean"
-            ? "A bag of numbered marbles. Grab some with replacement and average them: that average is one number read off a random grab. Do it again and it changes. The bottom line collects every average you get, and it is where the sampling distribution lives."
+            ? "A bag of numbered marbles. Their average is the population mean. Grab some with replacement and average them: that average is a sample mean, one number read off a random grab. Do it again and it changes. The bottom line collects every sample mean you get, and it is where the sampling distribution lives."
             : mode === "proportion"
-            ? "A bag of black and white marbles. Grab some with replacement and count the black ones as a fraction of the grab: that fraction is one number read off a random grab. Do it again and it changes. The bottom line collects every fraction you get."
-            : "One marble per person in the room, marked with an initial and a number. Everyone was counted, so this bag is a census and its mean is the true population mean. A grab is a simple random sample; its mean is one number read off one sample, and the bottom line collects what every sample would have said."}
+            ? "A bag of black and white marbles. The fraction of black in the bag is the population proportion. Grab some with replacement and count the black ones as a fraction of the grab: that fraction is a sample proportion, one number read off a random grab. Do it again and it changes. The bottom line collects every sample proportion you get."
+            : "One marble per person in the room, marked with an initial and a number. Everyone was counted, so this bag is a census and its mean is the population mean. A grab is a simple random sample; its sample mean is one number read off one sample, and the bottom line collects the sample mean of every sample drawn."}
         </p>
       </header>
 
@@ -430,7 +453,7 @@ export function Sampling() {
           <span className="control-label">&nbsp;</span>
           <span className="readout sampling-readout" aria-live="polite">
             {phase === "drawing" ? `Drawing… ${shown} of ${mEff}`
-              : trial ? `This ${grabWord}'s ${stat}: ${fmt(trial.mean)}. ${means.length} kept.`
+              : trial ? `This ${grabWord}'s ${sampleStat}: ${fmt(trial.mean)}. ${means.length} kept.`
               : `No ${grabWord}s yet.`}
           </span>
         </div>
@@ -438,11 +461,11 @@ export function Sampling() {
 
       <figure className="chart sampling">
         <svg viewBox={`0 0 ${W} ${H}`} role="img"
-             aria-label={`Three number lines: the bag, this ${grabWord} of ${mEff}, and ${means.length} sample ${stat}s.`}>
+             aria-label={`Three number lines: the bag, this ${grabWord} of ${mEff}, and ${means.length} ${sampleStat}s.`}>
           {/* The population value, one dashed line through all three rows. */}
           <line className="mu-line" x1={xAt(mu)} x2={xAt(mu)} y1={rowBag.y - rowBag.h} y2={rowMeans.y + 22} />
-          <text className="row-label mu-label" x={xAt(mu)} y={rowMeans.y + 34} textAnchor="middle">
-            {mode === "proportion" ? `p = ${fmt(p)}` : `μ = ${fmt(mu, 2)}`}
+          <text className="row-label mu-label" x={xAt(mu)} y={rowMeans.y + 34} textAnchor={muAnchor}>
+            {muLabel}
           </text>
 
           {/* Row 1: the bag. */}
@@ -512,7 +535,7 @@ export function Sampling() {
             <g className="mean-mark">
               <rect x={meanX - 5} y={markerTop} width={10} height={10} />
               <text className="mean-value" x={meanX + 9} y={markerTop + 9} textAnchor="start">
-                {stat} {fmt(trial.mean)}
+                {sampleStat} {fmt(trial.mean)}
               </text>
               <line className="mean-tick" x1={meanX} x2={meanX} y1={markerTop + 10} y2={rowSample.y} />
             </g>
@@ -546,26 +569,26 @@ export function Sampling() {
       <dl className="stats">
         {mode === "mean" ? (
           <>
-            <div><dt>Marbles: mean</dt><dd>{fmt(mu, 2)}</dd></div>
-            <div><dt>Marbles: SD</dt><dd>{fmt(sigma, 2)}</dd></div>
+            <div><dt>Population mean <span className="sym">μ</span></dt><dd>{fmt(mu, 2)}</dd></div>
+            <div><dt>Population SD <span className="sym">σ</span></dt><dd>{fmt(sigma, 2)}</dd></div>
           </>
         ) : mode === "proportion" ? (
           <>
-            <div><dt>p, black in the bag</dt><dd>{fmt(p)}</dd></div>
-            <div><dt>m·p and m·(1 − p)</dt><dd>{fmt(m * p, 1)} · {fmt(m * (1 - p), 1)}</dd></div>
+            <div><dt>Population proportion <span className="sym">p</span></dt><dd>{fmt(p)}</dd></div>
+            <div><dt><span className="sym">m·p</span> and <span className="sym">m·(1 − p)</span></dt><dd>{fmt(m * p, 1)} · {fmt(m * (1 - p), 1)}</dd></div>
           </>
         ) : (
           <>
-            <div><dt>Census: mean μ</dt><dd>{fmt(mu, 2)}</dd></div>
-            <div><dt>Census: SD σ</dt><dd>{fmt(sigma, 2)}</dd></div>
+            <div><dt>Population mean <span className="sym">μ</span></dt><dd>{fmt(mu, 2)}</dd></div>
+            <div><dt>Population SD <span className="sym">σ</span></dt><dd>{fmt(sigma, 2)}</dd></div>
           </>
         )}
-        <div><dt>{stat}s so far</dt><dd>{means.length}</dd></div>
-        <div><dt>Mean of the {stat}s</dt><dd>{fmt(mbar)}</dd></div>
-        <div><dt>SD of the {stat}s</dt><dd>{fmt(msd)}</dd></div>
-        <div><dt>{mode === "proportion" ? "√(p(1 − p) ÷ m)" : "σ ÷ √m"}</dt><dd>{fmt(se)}</dd></div>
+        <div><dt>{sampleStat}s so far</dt><dd>{means.length}</dd></div>
+        <div><dt>Average of the {sampleStat}s</dt><dd>{fmt(mbar)}</dd></div>
+        <div><dt>SD of the {sampleStat}s</dt><dd>{fmt(msd)}</dd></div>
+        <div><dt><span className="sym">{mode === "proportion" ? "√(p(1 − p) ÷ m)" : "σ ÷ √m"}</span></dt><dd>{fmt(se)}</dd></div>
         {noRepeats && (
-          <div><dt>… × √((N − m)/(N − 1)), no repeats</dt><dd>{fmt(se * fpc)}</dd></div>
+          <div><dt><span className="sym">… × √((N − m)/(N − 1))</span>, no repeats</dt><dd>{fmt(se * fpc)}</dd></div>
         )}
       </dl>
 
@@ -576,11 +599,14 @@ export function Sampling() {
               <strong>Two spreads on one scale.</strong> The marbles on the top
               line are as spread out as they come. The histogram on the bottom line
               crowds the dashed line. One marble can land anywhere in the bag; the
-              mean of {m} rarely strays far from μ.
+              sample mean of {m} rarely strays far from the population mean μ.
             </p>
             <p>
-              <strong>How far they stray is σ ÷ √m.</strong> After enough grabs
-              the SD of the means settles next to that number. Move the grab size
+              <strong>The expected value of the sample mean is μ.</strong> Averaged
+              over every possible grab, the sample mean comes out exactly at the
+              population mean, so the histogram centres on the dashed line. How
+              far a single sample mean strays is σ ÷ √m: after enough grabs the
+              SD of the sample means settles next to that number. Move the grab size
               up and the histogram pulls in; move it down to 1 and the bottom line is
               just the bag again.
             </p>
@@ -596,12 +622,13 @@ export function Sampling() {
             <p>
               <strong>A proportion is a mean.</strong> Call each black marble a 1
               and each white one a 0. The proportion of black in a grab is the
-              average of those 1s and 0s, so everything that was true of sample
-              means is true here, with μ = p and σ = √(p(1 − p)).
+              average of those 1s and 0s, so the sample proportion is a sample
+              mean and the population proportion p is the population mean, with
+              σ = √(p(1 − p)). The expected value of the sample proportion is p.
             </p>
             <p>
               <strong>So the spread is √(p(1 − p) ÷ m).</strong> After enough
-              grabs the SD of the proportions settles next to that number. The
+              grabs the SD of the sample proportions settles next to that number. The
               possible values are only the multiples of 1/m: with five marbles a
               grab can be 0, 0.2, 0.4, 0.6, 0.8 or 1, and nothing between.
             </p>
@@ -617,25 +644,71 @@ export function Sampling() {
           <>
             <p>
               <strong>A census against a sample.</strong> The top line is
-              everyone, so its mean μ is not an estimate of anything: it is the
-              answer. A real survey never has this line. It has one grab from the
-              middle line and has to live with that grab's mean, which is one of
-              the bars below, somewhere near μ and almost never on it.
+              everyone, so its population mean μ is not an estimate of anything:
+              it is the answer. A real survey never has this line. It has one grab from the
+              middle line and has to live with that grab's sample mean, which is one of
+              the bars below, somewhere near μ and almost never on it. Its
+              expected value is μ: averaged over every possible sample, the sample
+              mean lands exactly on the population mean.
             </p>
             <p>
               <strong>How near is σ ÷ √m.</strong> After enough samples the SD of
-              the means settles next to that number. Drawing no one twice pulls
+              the sample means settles next to that number. Drawing no one twice pulls
               the histogram in a little more, by the factor √((N − m)/(N − 1)) for a room of N, and
-              a sample as big as the room has only one possible mean: μ itself.
+              a sample as big as the room has only one possible sample mean: μ itself.
               Switch to drawing with replacement and the correction goes away.
             </p>
             <p>
               <strong>Read the labels.</strong> Each marble on the middle line is
               a person, and a grab is a list of names before it is a number.
               The same person can show up in one sample and not the next; that
-              is the whole reason the mean moves.
+              is the whole reason the sample mean moves.
             </p>
           </>
+        )}
+      </div>
+
+      <div className="table-view exact-table">
+        <h2>Every possible {sampleStat}, exactly</h2>
+        {exact.ok ? (
+          <>
+            <p>
+              {noRepeats
+                ? `There are ${exact.total.toLocaleString()} ways to pick ${mEff} of the ${census.length} people, all equally likely.`
+                : `There are ${exact.total.toLocaleString()} equally likely grabs of ${mEff}, counting the order the marbles come out.`}
+              {" "}Each row is one {sampleStat} a {grabWord} can have, how many of those give it, and so its
+              probability. This is the shape the histogram above settles into. Weight each {sampleStat} by
+              its probability and add: that is the {expStat}, and it equals the {popStat}.
+            </p>
+            <div className="exact-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{sampleStat}</th>
+                    <th>Ways, out of {exact.total.toLocaleString()}</th>
+                    <th>Probability</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {exact.rows.map((r) => (
+                    <tr key={r.mean}>
+                      <td>{fmtExact(r.mean)}</td>
+                      <td>{r.ways.toLocaleString()}</td>
+                      <td>{fmtProb(r.prob)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <dl className="stats exact-stats">
+              <div><dt>Possible {sampleStat}s</dt><dd>{exact.rows.length}</dd></div>
+              <div><dt>Expected value of the {sampleStat}</dt><dd>{fmt(exact.mean)}</dd></div>
+              <div><dt>{popStat}</dt><dd>{fmt(mu)}</dd></div>
+              <div><dt>SD of the {sampleStat}</dt><dd>{fmt(exact.sd)}</dd></div>
+            </dl>
+          </>
+        ) : (
+          <p className="exact-skipped">Not computed for this case. {exact.reason}</p>
         )}
       </div>
     </section>
