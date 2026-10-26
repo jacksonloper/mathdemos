@@ -703,6 +703,8 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
 .sampling .kept { fill: var(--text-1); opacity: 0.85; }
 .sampling-readout { margin: 0; min-width: 12em; }
 
+/* Symbols keep their case in the uppercase stat labels: μ, not M. */
+.stats dt .sym { text-transform: none; letter-spacing: 0.02em; }
 .exact-table { margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--line); }
 .exact-table h2 { margin: 0 0 6px; font-size: 16px; }
 .exact-table p { margin: 0; max-width: 62ch; color: var(--text-2); }

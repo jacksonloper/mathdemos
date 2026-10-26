@@ -49,7 +49,7 @@ export function exactMeans(values: number[], m: number, replace: boolean): Exact
   const breaker = (why: "many" | "slow"): ExactResult => ({
     ok: false,
     reason: why === "many"
-      ? `This bag and grab have more than ${MAX_OUTCOMES} possible means, too many for a table.`
+      ? `This bag and grab have more than ${MAX_OUTCOMES} possible sample means, too many for a table.`
       : "This bag and grab take too long to count exactly.",
   });
 
