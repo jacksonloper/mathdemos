@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { TextEntry, type ParseResult } from "../components/TextEntry";
 import { MAX_CHARS, parseMarbles, serializeMarbles, type Marble } from "../data/marbleText";
+import { exactMeans } from "../data/exactDistribution";
 
 /**
  * The sampling distribution of the mean, and of a proportion, built by hand.
@@ -24,6 +25,10 @@ import { MAX_CHARS, parseMarbles, serializeMarbles, type Marble } from "../data/
  * the next grab starts. The lesson is in the bottom line: the histogram
  * crowds the population value more tightly than marbles ever do, and more
  * tightly as m grows.
+ *
+ * Under the notes, for grabs of four or fewer, the exact distribution the
+ * histogram is chasing: every possible mean, how many grabs give it, and its
+ * probability. Past four, or past 500 possible means, the table is skipped.
  */
 
 const MAX_N = 50;
@@ -44,6 +49,9 @@ const sd = (xs: number[], mu: number) =>
   Math.sqrt(xs.reduce((a, x) => a + (x - mu) * (x - mu), 0) / xs.length);
 
 const fmt = (v: number, d = 2) => (Number.isFinite(v) ? v.toFixed(d) : "—");
+/** A possible mean, to as many places as it needs and no more than four. */
+const fmtExact = (v: number) => String(Number(v.toFixed(4)));
+const fmtProb = (v: number) => (v > 0 && v < 0.00005 ? "< 0.0001" : v.toFixed(4));
 
 /** Something in the bag before anyone has typed: twenty people and their keys. */
 const SAMPLE_CENSUS: Marble[] = "A3 B7 C2 D5 E4 F6 G3 H1 J8 K2 L4 M3 N5 P2 R6 S3 T4 V7 W2 Z5"
@@ -116,6 +124,14 @@ export function Sampling() {
   // Drawing without replacement from a small bag pulls the means in a little
   // more than σ ÷ √m says: the finite population correction.
   const fpc = noRepeats && census.length > 1 ? Math.sqrt((census.length - mEff) / (census.length - 1)) : 1;
+  // The exact sampling distribution, for small grabs. The numbered and
+  // black-and-white bags are drawn with replacement; the typed bag by its switch.
+  const exact = useMemo(() => {
+    const values = mode === "mean" ? Array.from({ length: n }, (_, v) => v)
+      : mode === "proportion" ? [...Array(black).fill(1), ...Array(white).fill(0)]
+      : censusValues;
+    return exactMeans(values, mEff, !noRepeats);
+  }, [mode, n, black, white, censusValues, mEff, noRepeats]);
   const lo = custom ? Math.min(0, ...censusValues) : 0;
   const hi = mode === "mean" ? Math.max(1, n - 1) : mode === "proportion" ? 1 : Math.max(lo + 1, ...censusValues);
 
@@ -636,6 +652,48 @@ export function Sampling() {
               is the whole reason the mean moves.
             </p>
           </>
+        )}
+      </div>
+
+      <div className="table-view exact-table">
+        <h2>Every possible {stat}, exactly</h2>
+        {exact.ok ? (
+          <>
+            <p>
+              {noRepeats
+                ? `There are ${exact.total.toLocaleString()} ways to pick ${mEff} of the ${census.length} people, all equally likely.`
+                : `There are ${exact.total.toLocaleString()} equally likely grabs of ${mEff}, counting the order the marbles come out.`}
+              {" "}Each row is one {stat} a {grabWord} can have, how many of those give it, and so its
+              probability. This is the shape the histogram above settles into.
+            </p>
+            <div className="exact-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{mode === "proportion" ? "Proportion" : "Mean"}</th>
+                    <th>Ways, out of {exact.total.toLocaleString()}</th>
+                    <th>Probability</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {exact.rows.map((r) => (
+                    <tr key={r.mean}>
+                      <td>{fmtExact(r.mean)}</td>
+                      <td>{r.ways.toLocaleString()}</td>
+                      <td>{fmtProb(r.prob)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <dl className="stats exact-stats">
+              <div><dt>Possible {stat}s</dt><dd>{exact.rows.length}</dd></div>
+              <div><dt>Mean of the table</dt><dd>{fmt(exact.mean)}</dd></div>
+              <div><dt>SD of the table</dt><dd>{fmt(exact.sd)}</dd></div>
+            </dl>
+          </>
+        ) : (
+          <p className="exact-skipped">Not computed for this case. {exact.reason}</p>
         )}
       </div>
     </section>

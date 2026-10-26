@@ -703,6 +703,30 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
 .sampling .kept { fill: var(--text-1); opacity: 0.85; }
 .sampling-readout { margin: 0; min-width: 12em; }
 
+.exact-table { margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--line); }
+.exact-table h2 { margin: 0 0 6px; font-size: 16px; }
+.exact-table p { margin: 0; max-width: 62ch; color: var(--text-2); }
+.exact-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+  margin-top: 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  padding: 0 0 0 14px;
+  max-width: 480px;
+}
+.exact-scroll table { margin-top: 0; width: 100%; }
+.exact-scroll th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-0);
+  padding-top: 10px;
+  padding-bottom: 8px;
+}
+.exact-scroll td:not(:first-child), .exact-scroll th:not(:first-child) { text-align: right; }
+.exact-stats { border-top: 0; margin-top: 10px; padding-top: 8px; }
+.exact-skipped { font-style: italic; }
+
 @media (prefers-reduced-motion: reduce) {
   .sampling .drawn, .sampling .mean-square.is-dropping, .sampling .mean-mark { animation: none; }
 }

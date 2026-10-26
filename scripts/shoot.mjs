@@ -53,6 +53,14 @@ for (const scheme of ["light", "dark"]) {
   await page.getByLabel("x for row 1").fill("abc");
   await page.screenshot({ path: `${out}/${scheme}-regression.png`, fullPage: true });
 
+  // The marbles demo: grabs of 5 skip the exact table, grabs of 2 show it.
+  await page.getByRole("button", { name: /Grab marbles, take the mean/ }).click();
+  await page.waitForSelector(".exact-table");
+  await page.screenshot({ path: `${out}/${scheme}-sampling-skipped.png`, fullPage: true });
+  await page.locator("#grab").fill("2");
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `${out}/${scheme}-sampling-exact.png`, fullPage: true });
+
   await ctx.close();
 }
 
