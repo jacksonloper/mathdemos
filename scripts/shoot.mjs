@@ -61,6 +61,13 @@ for (const scheme of ["light", "dark"]) {
   await page.waitForTimeout(300);
   await page.screenshot({ path: `${out}/${scheme}-sampling-exact.png`, fullPage: true });
 
+  // The weight-loss bag: a thousand surveys of 10 at once.
+  await page.getByRole("button", { name: "Weight loss, 1000 people" }).click();
+  await page.waitForSelector(".bag-bar");
+  await page.getByRole("button", { name: "1000 surveys, no animation" }).click();
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `${out}/${scheme}-sampling-weight.png`, fullPage: true });
+
   await ctx.close();
 }
 
