@@ -500,8 +500,9 @@ export function Sampling() {
             <button type="button" onClick={() => reset()} disabled={means.length === 0 && !busy}>Start over</button>
           </div>
         </div>
-        <div className="control">
-          <span className="control-label">&nbsp;</span>
+        {/* A row of its own, one line high, so the text changing as a grab
+            runs never rewraps the controls or moves the chart. */}
+        <div className="control sampling-readout-row">
           <span className="readout sampling-readout" aria-live="polite">
             {phase === "drawing" ? `Drawing… ${shown} of ${mEff}`
               : trial ? `This ${grabWord}'s ${sampleStat}: ${fmt(trial.mean)}. ${means.length} kept.`

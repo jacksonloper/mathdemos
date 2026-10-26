@@ -702,7 +702,8 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
 @keyframes square-in { from { opacity: 0; } to { opacity: 1; } }
 .sampling .kept { fill: var(--text-1); opacity: 0.85; }
 .sampling .bag-bar { fill: var(--series-1-soft); stroke: var(--series-1); stroke-width: 0.6; }
-.sampling-readout { margin: 0; min-width: 12em; }
+.sampling-readout-row { flex: 1 0 100%; }
+.sampling-readout { display: block; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Symbols keep their case in the uppercase stat labels: μ, not M. */
 .stats dt .sym { text-transform: none; letter-spacing: 0.02em; }
