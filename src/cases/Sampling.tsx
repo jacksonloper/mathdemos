@@ -2,19 +2,23 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { TextEntry, type ParseResult } from "../components/TextEntry";
 import { MAX_CHARS, parseMarbles, serializeMarbles, type Marble } from "../data/marbleText";
 import { exactMeans } from "../data/exactDistribution";
+import { WEIGHT_LOSS } from "../data/weightLoss";
 
 /**
  * The sampling distribution of the mean, and of a proportion, built by hand.
  *
- * Three bags. The numbered bag holds n marbles 0 to n − 1, every one equally
+ * Four bags. The numbered bag holds n marbles 0 to n − 1, every one equally
  * likely, and a grab's statistic is the mean. The black-and-white bag holds
  * x black and y white marbles, each black marble counting 1 and each white
  * one 0, and the same statistic is then the proportion of black in the grab.
  * The third bag is typed in: one marble per person in the room, marked with
  * an initial and a number ("B3", Bob has three keys), so the bag is a census
  * and its mean is the true population mean; a grab from it is a simple
- * random sample, with or without replacement. Same machinery, same three
- * number lines on one scale:
+ * random sample, with or without replacement. The fourth is a fixed
+ * population too big to type, the pounds lost by 1000 people on a new drug,
+ * drawn as a histogram instead of marbles; its numbers are in
+ * src/data/weightLoss.ts. Same machinery, same three number lines on one
+ * scale:
  *
  *   the bag        every marble, the population
  *   this grab      the m marbles just drawn, then a square at their mean
@@ -35,7 +39,10 @@ const MAX_N = 50;
 const MAX_M = 50;
 const MAX_MEANS = 20000;
 
-type Mode = "mean" | "proportion" | "custom";
+type Mode = "mean" | "proportion" | "custom" | "weight";
+
+/** The weight-loss bag as marbles with no names. */
+const WEIGHT_BAG: Marble[] = WEIGHT_LOSS.map((value) => ({ label: "", value }));
 type Phase = "idle" | "drawing" | "settling";
 
 type Trial = {
@@ -104,17 +111,23 @@ export function Sampling() {
   );
 
   const custom = mode === "custom";
-  const noRepeats = custom && !replace;
+  const weight = mode === "weight";
+  // The typed bag and the weight-loss bag are lists of people: a grab from
+  // either is a survey, with or without replacement by the same switch.
+  const people = custom || weight;
+  const bagList = weight ? WEIGHT_BAG : census;
+  const noRepeats = people && !replace;
   // Without replacement a grab cannot be bigger than the bag.
-  const mEff = noRepeats ? Math.min(m, census.length) : m;
+  const mEff = noRepeats ? Math.min(m, bagList.length) : m;
 
   // Population facts. Marbles 0 to n − 1 are a discrete uniform: mean
   // (n − 1)/2, variance (n² − 1)/12. Black-and-white marbles are 1s and 0s:
-  // mean p, variance p(1 − p). The typed bag is whatever was typed, and its
-  // mean and SD are the population's, since everyone was counted.
+  // mean p, variance p(1 − p). The typed bag and the weight-loss bag are
+  // whatever they hold, and their mean and SD are the population's, since
+  // everyone was counted.
   const total = black + white;
   const p = total > 0 ? black / total : 0;
-  const censusValues = useMemo(() => census.map((c) => c.value), [census]);
+  const censusValues = useMemo(() => bagList.map((c) => c.value), [bagList]);
   const censusMu = mean(censusValues);
   const mu = mode === "mean" ? (n - 1) / 2 : mode === "proportion" ? p : censusMu;
   const sigma = mode === "mean" ? Math.sqrt((n * n - 1) / 12)
@@ -123,17 +136,20 @@ export function Sampling() {
   const se = sigma / Math.sqrt(mEff);
   // Drawing without replacement from a small bag pulls the means in a little
   // more than σ ÷ √m says: the finite population correction.
-  const fpc = noRepeats && census.length > 1 ? Math.sqrt((census.length - mEff) / (census.length - 1)) : 1;
+  const fpc = noRepeats && bagList.length > 1 ? Math.sqrt((bagList.length - mEff) / (bagList.length - 1)) : 1;
   // The exact sampling distribution, for small grabs. The numbered and
-  // black-and-white bags are drawn with replacement; the typed bag by its switch.
+  // black-and-white bags are drawn with replacement; the other two by their switch.
   const exact = useMemo(() => {
     const values = mode === "mean" ? Array.from({ length: n }, (_, v) => v)
       : mode === "proportion" ? [...Array(black).fill(1), ...Array(white).fill(0)]
       : censusValues;
     return exactMeans(values, mEff, !noRepeats);
   }, [mode, n, black, white, censusValues, mEff, noRepeats]);
-  const lo = custom ? Math.min(0, ...censusValues) : 0;
-  const hi = mode === "mean" ? Math.max(1, n - 1) : mode === "proportion" ? 1 : Math.max(lo + 1, ...censusValues);
+  // The weight-loss bag has gains below 0, so its line runs from its own
+  // lowest value, rounded out to a whole pound.
+  const lo = weight ? Math.floor(Math.min(...censusValues)) : custom ? Math.min(0, ...censusValues) : 0;
+  const hi = mode === "mean" ? Math.max(1, n - 1) : mode === "proportion" ? 1
+    : weight ? Math.ceil(Math.max(...censusValues)) : Math.max(lo + 1, ...censusValues);
 
   function drawSample(): { draws: number[]; labels: string[] } {
     const draws: number[] = [];
@@ -144,18 +160,18 @@ export function Sampling() {
       for (let i = 0; i < m; i++) draws.push(Math.random() < p ? 1 : 0);
     } else if (replace) {
       for (let i = 0; i < m; i++) {
-        const c = census[Math.floor(Math.random() * census.length)];
+        const c = bagList[Math.floor(Math.random() * bagList.length)];
         draws.push(c.value);
         labels.push(c.label);
       }
     } else {
       // A partial Fisher–Yates shuffle: the first mEff of a random order.
-      const idx = census.map((_, i) => i);
+      const idx = bagList.map((_, i) => i);
       for (let i = 0; i < mEff; i++) {
         const j = i + Math.floor(Math.random() * (idx.length - i));
         [idx[i], idx[j]] = [idx[j], idx[i]];
-        draws.push(census[idx[i]].value);
-        labels.push(census[idx[i]].label);
+        draws.push(bagList[idx[i]].value);
+        labels.push(bagList[idx[i]].label);
       }
     }
     return { draws, labels };
@@ -239,20 +255,35 @@ export function Sampling() {
 
   // Geometry. One x scale for all three lines. The typed bag's marbles carry
   // labels, so they are bigger, and its rows are taller to hold the stacks.
+  // The weight-loss bag is too many marbles to draw, so its top line is a
+  // histogram of the 1000, one bar per pound.
   const W = 720;
   const PAD = { left: 40, right: 40 };
   const plotW = W - PAD.left - PAD.right;
   const xAt = (v: number) => PAD.left + (plotW * (v - lo)) / (hi - lo);
   const marbleR = mode === "mean" ? Math.max(3.5, Math.min(7, plotW / n / 2.6))
-    : mode === "proportion" ? 3.5
+    : mode === "proportion" || weight ? (weight ? 5 : 3.5)
     : Math.max(7, Math.min(10, plotW / (hi - lo + 1) / 2.4));
   const bagLevels = useMemo(() => (custom ? stacked(censusValues) : []), [custom, censusValues]);
   const bagStack = custom ? 1 + Math.max(0, ...bagLevels) : 1;
   const step = 2 * marbleR + 1;
   const rowBag = custom
     ? { y: 30 + Math.max(40, bagStack * step + 4), h: Math.max(40, bagStack * step + 4) }
+    : weight ? { y: 30 + 80, h: 80 }
     : { y: 54, h: 30 };
-  const sampleH = custom ? Math.max(68, Math.min(mEff, 6) * step + 4) : 68;
+  const sampleH = custom ? Math.max(68, Math.min(mEff, 6) * step + 4)
+    : weight ? Math.max(68, Math.min(mEff, 8) * step + 4)
+    : 68;
+  const weightBars = useMemo(() => {
+    if (!weight) return [];
+    const counts = new Map<number, number>();
+    for (const v of censusValues) {
+      const b = Math.floor(v);
+      counts.set(b, (counts.get(b) ?? 0) + 1);
+    }
+    const top = Math.max(...counts.values());
+    return [...counts.entries()].map(([b, c]) => ({ b, c, frac: c / top }));
+  }, [weight, censusValues]);
   const rowSample = { y: rowBag.y + 44 + sampleH, h: sampleH };
   const rowMeans = { y: rowSample.y + 40 + 120, h: 120 };
   const H = rowMeans.y + 46;
@@ -265,8 +296,9 @@ export function Sampling() {
   } else {
     const top = mode === "mean" ? n - 1 : hi;
     const span = top - lo;
-    const tstep = span <= 12 ? 1 : span <= 30 ? 5 : span <= 80 ? 10 : 20;
-    for (let t = Math.ceil(lo); t <= top; t += tstep) ticks.push({ v: t, label: String(t) });
+    const tstep = span <= 12 ? 1 : span <= 30 || weight ? 5 : span <= 80 ? 10 : 20;
+    // Ticks fall on multiples of the step, so a line that starts below 0 still reads 0, 5, 10.
+    for (let t = Math.ceil(lo / tstep) * tstep; t <= top; t += tstep) ticks.push({ v: t, label: String(t) });
     if (ticks.length === 0 || ticks[ticks.length - 1].v !== top) ticks.push({ v: top, label: String(top) });
   }
 
@@ -275,6 +307,20 @@ export function Sampling() {
   const sampleMarbles = useMemo(() => {
     const draws = trial?.draws ?? [];
     const labels = trial?.labels ?? [];
+    if (weight) {
+      // Values to a tenth of a pound rarely repeat but often crowd: each
+      // marble takes the lowest level with no marble already within a
+      // marble's width of it.
+      // A marble's width, in pounds.
+      const gap = (2 * marbleR * (hi - lo)) / plotW;
+      const placed: { v: number; level: number }[] = [];
+      return draws.map((v) => {
+        let level = 0;
+        while (placed.some((q) => q.level === level && Math.abs(q.v - v) < gap)) level++;
+        placed.push({ v, level });
+        return { v, dx: 0, level, black: true, label: "" };
+      });
+    }
     if (mode !== "proportion") {
       const levels = stacked(draws);
       return draws.map((v, i) => ({ v, dx: 0, level: levels[i], black: true, label: labels[i] ?? "" }));
@@ -288,7 +334,7 @@ export function Sampling() {
       const spot = v === 1 ? ones[i1++] : zeros[i0++];
       return { v, dx: spot.dx, level: spot.level, black: v === 1, label: "" };
     });
-  }, [trial, mode, marbleR]);
+  }, [trial, mode, marbleR, weight, hi, lo, plotW]);
 
   // The bottom line is a frequency histogram with fixed-width bins. A mean
   // of m marbles is always a multiple of 1/m (when the marbles are whole
@@ -351,6 +397,7 @@ export function Sampling() {
         <h1>
           {mode === "mean" ? "Grab marbles, take the mean, repeat"
             : mode === "proportion" ? "Grab marbles, take the proportion, repeat"
+            : weight ? "Sample from 1000 people, take the mean, repeat"
             : "Sample the room, take the mean, repeat"}
         </h1>
         <p>
@@ -358,6 +405,8 @@ export function Sampling() {
             ? "A bag of numbered marbles. Their average is the population mean. Grab some with replacement and average them: that average is a sample mean, one number read off a random grab. Do it again and it changes. The bottom line collects every sample mean you get, and it is where the sampling distribution lives."
             : mode === "proportion"
             ? "A bag of black and white marbles. The fraction of black in the bag is the population proportion. Grab some with replacement and count the black ones as a fraction of the grab: that fraction is a sample proportion, one number read off a random grab. Do it again and it changes. The bottom line collects every sample proportion you get."
+            : weight
+            ? "The pounds lost by 1000 people on a new drug over six months; a negative number is a gain. All 1000 were measured, so this is the whole population and its mean is the population mean. A survey is a simple random sample of a few of them; its sample mean is one number read off one sample, and the bottom line collects the sample mean of every sample drawn."
             : "One marble per person in the room, marked with an initial and a number. Everyone was counted, so this bag is a census and its mean is the population mean. A grab is a simple random sample; its sample mean is one number read off one sample, and the bottom line collects the sample mean of every sample drawn."}
         </p>
       </header>
@@ -372,6 +421,8 @@ export function Sampling() {
                     onClick={() => reset({ mode: "proportion" })}>Black and white, proportion</button>
             <button type="button" className={custom ? "is-active" : ""} aria-pressed={custom}
                     onClick={() => reset({ mode: "custom" })}>My data</button>
+            <button type="button" className={weight ? "is-active" : ""} aria-pressed={weight}
+                    onClick={() => reset({ mode: "weight", m: 10 })}>Weight loss, 1000 people</button>
           </div>
         </div>
       </div>
@@ -430,10 +481,10 @@ export function Sampling() {
         <div className="control">
           <label className="control-label" htmlFor="grab">{noRepeats ? "Sample size" : "Grab size"}</label>
           <div className="slider-row">
-            <input id="grab" type="range" min={1} max={noRepeats ? census.length : MAX_M} step={1} value={mEff}
+            <input id="grab" type="range" min={1} max={noRepeats ? Math.min(bagList.length, weight ? MAX_M : bagList.length) : MAX_M} step={1} value={mEff}
                    onChange={(e) => reset({ m: Number(e.target.value) })} />
             <output className="slider-value">
-              {noRepeats ? `m = ${mEff} of ${census.length} people` : `m = ${mEff} per grab`}
+              {noRepeats ? `m = ${mEff} of ${bagList.length} people` : `m = ${mEff} per grab`}
             </output>
           </div>
         </div>
@@ -449,8 +500,9 @@ export function Sampling() {
             <button type="button" onClick={() => reset()} disabled={means.length === 0 && !busy}>Start over</button>
           </div>
         </div>
-        <div className="control">
-          <span className="control-label">&nbsp;</span>
+        {/* A row of its own, one line high, so the text changing as a grab
+            runs never rewraps the controls or moves the chart. */}
+        <div className="control sampling-readout-row">
           <span className="readout sampling-readout" aria-live="polite">
             {phase === "drawing" ? `Drawing… ${shown} of ${mEff}`
               : trial ? `This ${grabWord}'s ${sampleStat}: ${fmt(trial.mean)}. ${means.length} kept.`
@@ -472,6 +524,7 @@ export function Sampling() {
           <text className="row-label" x={PAD.left} y={rowBag.y - rowBag.h - 6}>
             {mode === "mean" ? "The bag: every marble, equally likely"
               : mode === "proportion" ? `The bag: ${black} black (each a 1) and ${white} white (each a 0)`
+              : weight ? "The population: all 1000 people, how many lost each whole pound"
               : `The census: ${census.length} people, one marble each, everyone counted`}
           </text>
           <line className="axis" x1={PAD.left} x2={W - PAD.right} y1={rowBag.y} y2={rowBag.y} />
@@ -488,6 +541,11 @@ export function Sampling() {
                   <circle key={`b${i}`} className="marble bag-marble black" cx={xAt(1) + s.dx} cy={rowBag.y - 4 - s.level * 7} r={3} />
                 )),
               ]
+            : weight
+            ? weightBars.map(({ b, frac }) => (
+                <rect key={b} className="bag-bar" x={xAt(b) + 0.5} width={Math.max(1, xAt(b + 1) - xAt(b) - 1)}
+                      y={rowBag.y - frac * (rowBag.h - 6)} height={frac * (rowBag.h - 6)} />
+              ))
             : census.map((c, i) => {
                 const cy = rowBag.y - marbleR - 1 - bagLevels[i] * step;
                 return (
@@ -640,6 +698,33 @@ export function Sampling() {
               is big enough to free it.
             </p>
           </>
+        ) : weight ? (
+          <>
+            <p>
+              <strong>A population too big to look at.</strong> No one would read
+              1000 numbers, so the top line shows their shape instead: a mound
+              around the population mean μ, with a few people who gained. A real
+              study never sees this line. It sees one survey of a handful of people
+              and has to live with that survey's sample mean.
+            </p>
+            <p>
+              <strong>How far off is one sample mean?</strong> Its expected value
+              is μ, and its expected squared miss is σ² ÷ m, so a typical miss is
+              σ ÷ √m. With σ = {fmt(sigma)} and m = {mEff}, that is {fmt(se)} pounds.
+              Quadruple the sample size and the typical miss halves. Drawing no one
+              twice pulls it in by √((N − m)/(N − 1)) as well, but out of 1000
+              people that factor is nearly 1.
+            </p>
+            <p>
+              <strong>Too many outcomes to list.</strong> A sample of one person
+              can only be one of the population&rsquo;s values, so its exact table
+              is the population again. From two people on there are more possible
+              sample means than a table could hold, and four people can be picked
+              in more ways than there are people on Earth, so the exact table
+              below is skipped. The histogram is how you see this sampling
+              distribution.
+            </p>
+          </>
         ) : (
           <>
             <p>
@@ -674,7 +759,7 @@ export function Sampling() {
           <>
             <p>
               {noRepeats
-                ? `There are ${exact.total.toLocaleString()} ways to pick ${mEff} of the ${census.length} people, all equally likely.`
+                ? `There are ${exact.total.toLocaleString()} ways to pick ${mEff} of the ${bagList.length} people, all equally likely.`
                 : `There are ${exact.total.toLocaleString()} equally likely grabs of ${mEff}, counting the order the marbles come out.`}
               {" "}Each row is one {sampleStat} a {grabWord} can have, how many of those give it, and so its
               probability. This is the shape the histogram above settles into. Weight each {sampleStat} by
