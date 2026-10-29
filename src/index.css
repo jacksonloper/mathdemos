@@ -756,3 +756,59 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
 .poly-fill { fill: var(--series-1-soft); opacity: 0.55; pointer-events: none; }
 .poly { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linejoin: round; pointer-events: none; }
 .poly-dot { fill: var(--series-1); pointer-events: none; }
+
+/* ---- normal quantile plot, built step by step ---- */
+
+/* The bell stands along the z axis, opening to the left. The shaded tail is
+   the one area under it the current rank is about. Blue ticks are the z
+   values already found; the black dots on the bottom axis are the data. */
+.quantile .bell { fill: none; stroke: var(--text-2); stroke-width: 1.5; }
+.quantile .tail { fill: var(--series-1-soft); stroke: none; }
+.quantile .ztick { stroke: var(--series-1); stroke-width: 2; animation: square-in 200ms ease both; }
+.quantile .ztick.is-focus { stroke-width: 4; }
+.quantile .tail-label, .quantile .z-label {
+  font: 600 11px "Helvetica Neue", Helvetica, sans-serif;
+  fill: var(--series-1);
+}
+.quantile .tail-label { fill: var(--text-2); }
+.quantile .datum circle { fill: var(--text-1); animation: marble-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both; transform-box: fill-box; transform-origin: center; }
+.quantile .datum.is-focus circle { stroke: var(--series-2); stroke-width: 3; }
+.quantile .rank-label {
+  font: 9px "Helvetica Neue", Helvetica, sans-serif;
+  fill: var(--text-3);
+}
+.quantile .datum.is-focus .rank-label { fill: var(--series-2); font-weight: 600; }
+.quantile .qpoint {
+  fill: var(--series-1);
+  stroke: var(--surface-0);
+  stroke-width: 1.5;
+  cursor: pointer;
+  animation: marble-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.quantile .qpoint.is-focus { fill: var(--series-2); stroke: var(--text-1); }
+.quantile .qpoint:hover { fill: var(--text-1); }
+/* Guide lines grow out from the two ticks to the meeting point. */
+.quantile .guides line {
+  stroke: var(--series-2);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+.quantile .guides { animation: square-in 260ms ease both; }
+.quantile .fade-in { animation: square-in 320ms ease both; }
+
+.qlist .qitem { display: inline-block; margin-right: 0.9em; }
+.qlist .qrank {
+  font-size: 9px;
+  color: var(--text-3);
+  margin-right: 2px;
+  vertical-align: super;
+}
+.qlist .qitem.is-focus { color: var(--series-2); font-weight: 600; }
+.qlist .qitem.is-focus .qrank { color: var(--series-2); }
+
+@media (prefers-reduced-motion: reduce) {
+  .quantile .ztick, .quantile .datum circle, .quantile .qpoint,
+  .quantile .guides, .quantile .fade-in { animation: none; }
+}

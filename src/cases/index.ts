@@ -4,6 +4,7 @@ import { Binning } from "./Binning";
 import { Bivariate } from "./Bivariate";
 import { TwoEvents } from "./TwoEvents";
 import { Sampling } from "./Sampling";
+import { Quantile } from "./Quantile";
 
 export type CaseStudy = {
   id: string;
@@ -45,5 +46,11 @@ export const caseStudies: CaseStudy[] = [
     title: "Grab marbles, take the mean",
     topic: "Sampling distributions",
     Component: Sampling,
+  },
+  {
+    id: "quantile",
+    title: "Building a normal quantile plot",
+    topic: "Assessing normality",
+    Component: Quantile,
   },
 ];
