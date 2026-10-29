@@ -24,6 +24,7 @@ npm run shoot    # screenshots to shots/ (dev server must be running)
 
 | `two-events` | Probability | A Venn diagram on a line. The sample space is the unit interval, A and B are stretches of it, and four sliders set P(A), P(B), P(A and B) and P(A or B). One equation ties them, so moving one slider moves another; a bar under the overlap and union sliders shows the values that fit. Presets for disjoint, independent and nested. |
 | `binning` | Histograms | Class width changes the picture. Same data, a slider on the width, a three-way axis (frequency, relative frequency, density), and a raw view showing every observation unbinned. The relative and density axes are pinned per dataset, so narrowing the classes flattens the relative-frequency bars toward zero while the density bars hold their height; density mode draws the frequency polygon, whose area is exactly 1 by construction. A second toggle swaps the histogram for a boxplot. A *Your data* entry takes a typed or pasted list (spaces, commas or line breaks) with its own units; its class widths are a ladder of round numbers from one class holding everything down to twenty-odd, so a room's measurements can be binned on the spot. |
+| `quantile` | Assessing normality | How a normal quantile plot is built, one rank at a time. The values land on a number line and sort; a standard normal curve stands along the vertical axis; for each rank the left tail with area (i − 3/8)/(n + 1/4) is shaded and its z becomes a blue tick; then each value's black tick and its blue tick send guide lines to the dot; last, the least-squares line of z on the value. Step buttons, play at three speeds, "show all"; click a finished dot to light up its rank, ticks and tail. A toggle relabels the vertical axis in data units, x̄ + s·z, where the reference line is y = x. Presets `scores` (looks normal) and `skewed` (does not), or a typed list of up to 60. |
 
 A demo may name a course it is used in, via the optional `course` field in the
 registry. None currently do, and the app itself is not tied to any course.
@@ -83,6 +84,26 @@ hand.
   runs past the data on the right and stops at it on the left.
 - Colours are one categorical slot from a validated palette, with light and dark
   steps checked separately against their own surfaces.
+
+## Notes on the quantile demo
+
+- **Blom positions.** Rank i of n is given the area (i − 3/8)/(n + 1/4), about
+  the share of a normal population that falls below the i-th smallest of n
+  draws. A TI-84's normal probability plot uses the same rule, so its dots and
+  these agree. The z that cuts off that area is found by Acklam's inverse
+  normal and kept to two decimals, the precision it is shown at, and the
+  least-squares line is fitted to those two-decimal z values. The line on the
+  screen is therefore the line a reader gets from the printed numbers.
+- **Data across, z up.** That is the orientation of ALEKS and of a TI-84 with
+  `Data Axis: X`, so the picture matches what a student is tested on. The
+  curve stands along the vertical axis for the same reason: a tail of it is an
+  interval of z, and z is the vertical coordinate.
+- **The dot plot on the bottom axis is the data.** The black dots there are
+  the black ticks of the construction; ties stack upward. Rank labels are
+  drawn beside them for 30 values or fewer, and the sorted list under the chart
+  carries the ranks for any n.
+- **No verdict is printed.** The reference line is drawn and the dots sit where
+  they sit.
 
 ## Deploying
 

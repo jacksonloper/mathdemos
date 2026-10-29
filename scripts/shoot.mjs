@@ -68,6 +68,16 @@ for (const scheme of ["light", "dark"]) {
   await page.waitForTimeout(300);
   await page.screenshot({ path: `${out}/${scheme}-sampling-weight.png`, fullPage: true });
 
+  // The quantile plot: finished, with its line, for both presets.
+  await page.getByRole("button", { name: /Building a normal quantile plot/ }).click();
+  await page.getByRole("button", { name: "Show all" }).click();
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: `${out}/${scheme}-quantile-scores.png` });
+  await page.getByRole("button", { name: "Skewed", exact: true }).click();
+  await page.getByRole("button", { name: "Show all" }).click();
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: `${out}/${scheme}-quantile-skewed.png` });
+
   await ctx.close();
 }
 
