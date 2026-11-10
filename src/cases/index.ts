@@ -5,6 +5,7 @@ import { Bivariate } from "./Bivariate";
 import { TwoEvents } from "./TwoEvents";
 import { Sampling } from "./Sampling";
 import { Quantile } from "./Quantile";
+import { Confidence } from "./Confidence";
 
 export type CaseStudy = {
   id: string;
@@ -52,5 +53,11 @@ export const caseStudies: CaseStudy[] = [
     title: "Building a normal quantile plot",
     topic: "Assessing normality",
     Component: Quantile,
+  },
+  {
+    id: "confidence",
+    title: "A CI is not where the data are",
+    topic: "Confidence intervals",
+    Component: Confidence,
   },
 ];

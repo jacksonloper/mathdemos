@@ -812,3 +812,35 @@ button.ghost:hover { color: var(--text-1); border-color: var(--text-3); }
   .quantile .ztick, .quantile .datum circle, .quantile .qpoint,
   .quantile .guides, .quantile .fade-in { animation: none; }
 }
+
+/* ---- confidence interval ---- */
+
+.confidence-chart { margin-top: 14px; }
+.confidence .row-label {
+  font-size: 12px;
+  fill: var(--text-3);
+}
+.confidence .band-caption {
+  font-size: 12px;
+  fill: var(--text-2);
+  paint-order: stroke;
+  stroke: var(--surface-0);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.confidence .xtick { font-size: 11px; fill: var(--text-3); }
+.confidence .pop-area { fill: var(--line-soft); }
+.confidence .pop-band-area { fill: var(--series-1-soft); }
+.confidence .pop-curve { fill: none; stroke: var(--text-3); stroke-width: 1.5; }
+.confidence .mu-line { stroke: var(--series-2); stroke-width: 2; stroke-dasharray: 6 4; }
+.confidence .mu-label { font-size: 12px; font-weight: 600; fill: var(--series-2); }
+.confidence .dots circle { fill: var(--text-1); opacity: 0.55; }
+.confidence .bar { stroke-width: 6; stroke-linecap: round; }
+.confidence .end { font-size: 12px; fill: var(--text-1); font-variant-numeric: tabular-nums; }
+.confidence .ci .centre { fill: var(--surface-0); stroke-width: 3; }
+.confidence .ci.is-hit .bar, .confidence .ci.is-hit .centre { stroke: var(--ok); }
+.confidence .ci.is-miss .bar, .confidence .ci.is-miss .centre { stroke: var(--bad); }
+.confidence .verdict-text { font-size: 13px; font-weight: 700; }
+.confidence .ci.is-hit .verdict-text { fill: var(--ok); }
+.confidence .ci.is-miss .verdict-text { fill: var(--bad); }
+.confidence .pop-band .bar { stroke: var(--series-1); }
